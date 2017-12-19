@@ -823,3 +823,8 @@ _force_xfsv4_mount_options()
 	fi
 	echo "MOUNT_OPTIONS = $MOUNT_OPTIONS" >>$seqres.full
 }
+
+_scratch_xfs_agcount()
+{
+	$XFS_INFO_PROG "${SCRATCH_MNT}" | grep "agcount=" | sed -e 's/^.*agcount=\([0-9]*\),.*$/\1/g'
+}
