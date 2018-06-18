@@ -502,6 +502,8 @@
 502 auto quick unlink
 503 auto copy metadump
 713 dangerous_fuzzers dangerous_scrub dangerous_online_repair
+714 dangerous_scrub dangerous_online_repair
+715 dangerous_scrub dangerous_online_repair
 739 auto quick mkfs label
 741 auto quick rw
 742 auto quick spaceman
