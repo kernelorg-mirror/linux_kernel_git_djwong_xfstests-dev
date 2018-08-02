@@ -1,0 +1,128 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0+
+# Copyright (c) 2019 Oracle, Inc.  All Rights Reserved.
+#
+# FS QA Test No. 907
+#
+# Try to overflow i_delayed_blks by setting the largest cowextsize hint
+# possible, creating a sparse file with a single byte every cowextsize bytes,
+# reflinking it, and retouching every written byte to see if we can create
+# enough speculative COW reservations to overflow i_delayed_blks.
+#
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1	# failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 7 15
+
+_cleanup()
+{
+	cd /
+	umount $loop_mount > /dev/null 2>&1
+	rm -rf $tmp.*
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/reflink
+
+# real QA test starts here
+_supported_os Linux
+_supported_fs xfs
+_require_scratch_reflink
+_require_loop
+_require_xfs_debug
+
+echo "Format and mount"
+_scratch_mkfs > "$seqres.full" 2>&1
+_scratch_mount
+_require_fs_space $SCRATCH_MNT 2400000	# 100T fs requires ~2.4GB of space
+
+loop_file=$SCRATCH_MNT/a.img
+loop_mount=$SCRATCH_MNT/a
+truncate -s 100T $loop_file
+$MKFS_XFS_PROG $MKFS_OPTIONS -f $loop_file >> $seqres.full
+mkdir $loop_mount
+mount -o loop -t xfs $loop_file $loop_mount
+
+echo "Create crazy huge file"
+touch "${loop_mount}/a"
+blksz="$(stat -f -c '%S' "${loop_mount}")"
+MAXEXTLEN=2097151	# cowextsize can't be more than MAXEXTLEN
+extsize="$(( ((2 ** 32) - 1) / blksz ))"
+test "${extsize}" -gt "${MAXEXTLEN}" && extsize="${MAXEXTLEN}"
+extsize_bytes="$(( extsize * blksz ))"
+
+# Set the largest cowextsize we can
+$XFS_IO_PROG -c "cowextsize ${extsize_bytes}" "${loop_mount}/a"
+set_cowextsize="$($XFS_IO_PROG -c 'cowextsize' "${loop_mount}/a" | sed -e 's/^.\([0-9]*\).*$/\1/g')"
+test "${set_cowextsize}" -eq 0 && _fail "could not set cowextsize?"
+
+statB="$(stat -c '%B' "${loop_mount}/a")"
+
+# Write a single byte every cowextsize bytes so that we minimize the space
+# required to create maximally sized cow reservations
+nr="$(( ((2 ** 32) / extsize) + 100 ))"
+seq 0 "${nr}" | tac | while read n; do
+	off="$((n * extsize * blksz))"
+	$XFS_IO_PROG -c "pwrite ${off} 1" "${loop_mount}/a" > /dev/null
+done
+
+echo "Reflink crazy huge file"
+cp --reflink=always "${loop_mount}/a" "${loop_mount}/b"
+
+echo "COW crazy huge file"
+# Try to create enough maximally sized cow reservations to overflow
+# i_delayed_blks
+seq 0 "${nr}" | tac | while read n; do
+	off="$((n * extsize * blksz))"
+	$XFS_IO_PROG -c "pwrite ${off} 1" "${loop_mount}/a" > /dev/null
+done
+
+echo "Check crazy huge file"
+blocks="$(stat -c '%b' "${loop_mount}/a")"
+fsblocks="$((blocks * statB / blksz))"
+
+# Make sure we got enough COW reservations to overflow a 32-bit counter.
+$XFS_IO_PROG -c 'bmap -clpv' "${loop_mount}/a" > $tmp.extents
+echo "COW EXTENT STATE" >> $seqres.full
+cat $tmp.extents >> $seqres.full
+cat > $tmp.awk << ENDL
+{
+	if (\$3 == "delalloc") {
+		x += \$4;
+	} else if (\$3 == "hole") {
+		;
+	} else {
+		x += \$6;
+	}
+}
+END {
+	printf("%d\\n", x / ($blksz / 512));
+}
+ENDL
+cat $tmp.awk >> $seqres.full
+cowblocks="$(awk -f $tmp.awk $tmp.extents)"
+echo "cowblocks is ${cowblocks}" >> $seqres.full
+if [ "${cowblocks}" -lt "$((2 ** 32))" ]; then
+	echo "cowblocks (${cowblocks}) should be more than 2^32!"
+fi
+
+# And finally, see if i_delayed_blks overflowed.
+echo "stat blocks is ${fsblocks}" >> $seqres.full
+if [ "${fsblocks}" -lt "$((2 ** 32))" ]; then
+	echo "stat blocks (${fsblocks}) should be more than 2^32!"
+	if [ "${cowblocks}" -lt "$((2 ** 32))" ]; then
+		echo "cowblocks (${cowblocks}) is more than 2^32, your system has overflowed!!!"
+	fi
+fi
+
+echo "Test done"
+umount $loop_mount
+
+# success, all done
+status=0
+exit
