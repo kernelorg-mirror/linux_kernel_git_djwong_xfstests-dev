@@ -1,0 +1,61 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0+
+# Copyright (c) 2019 Oracle, Inc.  All Rights Reserved.
+#
+# FS QA Test No. 709
+#
+# Check that statx btime (aka creation time) is plausibly close to when
+# we created a file.  A bug caught during code review of xfs patches revealed
+# that there weren't any sanity checks of the btime values.
+#
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+tmp=/tmp/$$
+status=1	# failure is the default!
+testfile=$TEST_DIR/$seq.txt
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.* $testfile
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/attr
+. ./common/filter
+
+# real QA test starts here
+_supported_fs generic
+_supported_os Linux
+_require_xfs_io_command "statx" "-r"
+
+rm -f $seqres.full
+rm -f $testfile
+
+# Create a file and the time we created it
+now=$(date +%s)
+touch $testfile
+
+# Does statx return results with the BTIME flag set in the result mask?
+STATX_BTIME=0x800
+$XFS_IO_PROG -c "statx -F -r -m $STATX_BTIME" $testfile > $tmp.statx
+cat $tmp.statx >> $seqres.full
+
+result_mask=$(grep 'stat.mask =' $tmp.statx | cut -d ' ' -f 3)
+test -n "$result_mask" || _notrun "did not see stat.mask in output"
+
+test "$(( result_mask & STATX_BTIME ))" -ne 0 || \
+	_notrun "statx did not return btime"
+
+# Make sure the reported btime is within 5 seconds of the time we recorded
+# just prior to creating the file.
+btime=$(grep 'stat.btime.tv_sec =' $tmp.statx | cut -d ' ' -f 3)
+test -n "$btime" || echo "error: did not see btime in output??"
+
+_within_tolerance "btime" "$btime" "$now" 0 5 -v
+
+status=0
+exit
