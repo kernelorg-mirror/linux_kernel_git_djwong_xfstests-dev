@@ -1,0 +1,65 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2019 Red Hat, Inc.  All Rights Reserved.
+#
+# FS QA Test xfs/1504
+#
+# Simulate unpacking a tarball by writing a lot of files with sizes ranging
+# between 128k and 256k, then flush the fs and check that there isn't
+# excessive free space fragmentation.
+#
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1	# failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.*
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+# remove previous $seqres.full before test
+rm -f $seqres.full
+
+# real QA test starts here
+
+# Modify as appropriate.
+_supported_fs generic
+_supported_os Linux
+_require_xfs_io_command 'fsmap' -v
+_require_scratch
+
+_scratch_mkfs_xfs | tee -a $seqres.full | _filter_mkfs 2>$tmp.mkfs > /dev/null
+. $tmp.mkfs
+_scratch_mount
+
+# Write a bunch of files from a single thread, simulating a tarball unpack.
+workfile=$SCRATCH_MNT/file
+nfiles=1000
+
+for ((n=0; n<$((nfiles)); n++)); do
+	$XFS_IO_PROG -f -c "pwrite -S 0x58 0 $((RANDOM * 4 + 131072))" $workfile.$n >> $seqres.full
+done
+$XFS_IO_PROG -c 'syncfs' $SCRATCH_MNT
+
+# Check free space extent count.
+count=$($XFS_IO_PROG -c 'fsmap -v' $SCRATCH_MNT | grep -c 'free space')
+_within_tolerance "free space extent count" $count $agcount 0 $((agcount * 2)) -v
+
+# djwong weirdness
+$XFS_SPACEMAN_PROG -c 'freesp' $SCRATCH_MNT >> $seqres.full
+_scratch_cycle_mount
+$XFS_SPACEMAN_PROG -c 'freesp' $SCRATCH_MNT >> $seqres.full
+
+# success, all done
+status=0
+exit
