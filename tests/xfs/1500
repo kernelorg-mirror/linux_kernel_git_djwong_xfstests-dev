@@ -1,0 +1,84 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2019 Red Hat, Inc.  All Rights Reserved.
+#
+# FS QA Test xfs/1500
+#
+# Post-EOF preallocation defeat test
+#
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1	# failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.*
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+# remove previous $seqres.full before test
+rm -f $seqres.full
+
+# real QA test starts here
+
+# Modify as appropriate.
+_supported_fs generic
+_supported_os Linux
+_require_scratch
+
+_scratch_mkfs 2>&1 >> $seqres.full
+_scratch_mount
+
+# Write multiple files in parallel using synchronous buffered writes. Aim is to
+# interleave allocations to fragment the files. Synchronous writes defeat the
+# open/write/close heuristics in xfs_release() that prevent EOF block removal,
+# so this should fragment badly. Typical problematic behaviour shows per-file
+# extent counts of >900 (almost worse case) whilst fixed behaviour typically
+# shows extent counts in the low 20s.
+#
+# Failure is determined by golden output mismatch from _within_tolerance().
+
+workfile=$SCRATCH_MNT/file
+nfiles=8
+wsize=4096
+wcnt=1000
+
+write_sync_file()
+{
+	idx=$1
+
+	for ((cnt=0; cnt<$wcnt; cnt++)); do
+		$XFS_IO_PROG -f -s -c "pwrite $((cnt * wsize)) $wsize" $workfile.$idx
+	done
+}
+
+rm -f $workfile*
+for ((n=0; n<$nfiles; n++)); do
+	write_sync_file $n > /dev/null 2>&1 &
+done
+wait
+sync
+
+for ((n=0; n<$nfiles; n++)); do
+	count=$(_count_extents $workfile.$n)
+	# Acceptible extent count range is 1-40
+	_within_tolerance "file.$n extent count" $count 21 19 -v
+done
+
+# djwong weirdness
+$XFS_SPACEMAN_PROG -c 'freesp' $SCRATCH_MNT
+_scratch_cycle_mount
+$XFS_SPACEMAN_PROG -c 'freesp' $SCRATCH_MNT
+
+# success, all done
+status=0
+exit
