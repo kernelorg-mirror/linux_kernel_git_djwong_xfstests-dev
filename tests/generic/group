@@ -554,3 +554,5 @@
 549 auto quick encrypt
 550 auto quick encrypt
 551 auto stress aio
+715 auto quick rw
+716 auto quick rw
