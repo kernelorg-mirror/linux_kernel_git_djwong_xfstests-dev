@@ -506,5 +506,6 @@
 506 auto quick health
 507 clone
 508 auto quick quota
+741 auto quick rw
 744 auto ioctl quick
 745 auto ioctl quick

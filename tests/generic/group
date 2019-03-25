@@ -565,3 +565,5 @@
 560 auto stress dedupe
 561 auto stress dedupe
 562 auto clone
+715 auto quick rw
+716 auto quick rw
