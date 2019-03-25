@@ -1,0 +1,103 @@
+QA output created by 715
+*** checking rw open
+TEST_DIR/715.txt: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking ro open
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking append
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+pwrite: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking truncate bigger
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ftruncate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking truncate smaller
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ftruncate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking chmod
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fchmod: Operation not permitted
+fchmod: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking utimes
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+futimens: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking rewrite
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+pwrite: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking falloc
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking fpunch
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking finsert
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking fcollapse
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking funshare
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking fzero
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+fallocate: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking flink
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+flink: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking read
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+read 65536/65536 bytes at offset 0
+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking mmap read
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking read of existing mmap
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking read of existing mapped mmap
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking mmap write
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+mmap: Operation not permitted
+no mapped regions, try 'help mmap'
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking write of existing mmap
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking write of existing mapped mmap
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking copyrange blocks
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+copy_range: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking copyrange
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+copy_range: Operation not permitted
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking chattr chattr
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** checking chattr unchattr unchattr
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+ce6c1b3863d0495541b38a794f62dd81  TEST_DIR/715.txt
+*** read files with a readonly fd
+read 65536/65536 bytes at offset 0
+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+TEST_DIR/715.txt: Operation not permitted
+*** try chattr program
