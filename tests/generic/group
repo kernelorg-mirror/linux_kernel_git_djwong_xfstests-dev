@@ -560,3 +560,5 @@
 555 auto quick cap
 556 auto quick casefold
 557 auto quick log
+715 auto quick rw
+716 auto quick rw
