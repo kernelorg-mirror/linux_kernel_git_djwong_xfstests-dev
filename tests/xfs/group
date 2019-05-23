@@ -504,4 +504,6 @@
 504 auto quick mkfs label
 505 auto quick spaceman
 506 auto quick health
+744 auto ioctl quick
+745 auto ioctl quick
 907 clone
