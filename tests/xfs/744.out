@@ -1,0 +1,105 @@
+QA output created by 744
+
+expect 2057
+4096 all: 2057
+4096 perag: 2057
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+71 all: 2057
+71 perag: 2057
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+32 all: 2057
+32 perag: 2057
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+1 all: 2057
+1 perag: 2057
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+
+expect 1033
+4096 all: 1033
+4096 perag: 1033
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+71 all: 1033
+71 perag: 1033
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+32 all: 1033
+32 perag: 1033
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+1 all: 1033
+1 perag: 1033
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+
+expect 521
+4096 all: 521
+4096 perag: 521
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+71 all: 521
+71 perag: 521
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+32 all: 521
+32 perag: 521
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+1 all: 521
+1 perag: 521
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+
+expect 9
+4096 all: 9
+4096 perag: 9
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+71 all: 9
+71 perag: 9
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+32 all: 9
+32 perag: 9
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
+1 all: 9
+1 perag: 9
+inumbers all: inumbers is in range
+inumbers 64: inumbers is in range
+inumbers 2: inumbers is in range
+inumbers 1: inumbers is in range
