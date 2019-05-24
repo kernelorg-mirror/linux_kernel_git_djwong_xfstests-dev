@@ -519,3 +519,4 @@
 741 auto quick rw
 744 auto ioctl quick
 745 auto ioctl quick
+746 auto quick online_repair
