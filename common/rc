@@ -438,6 +438,14 @@ _scratch_mkfs_options()
     echo $SCRATCH_OPTIONS $MKFS_OPTIONS $* $SCRATCH_DEV
 }
 
+# Format the scratch device directly.  First argument is the mkfs command.
+# Second argument are all the parameters.  stdout goes to $tmp.mkfsstd and
+# stderr goes to $tmp.mkfserr.
+__scratch_do_mkfs()
+{
+	eval "$1 $2 $SCRATCH_DEV" 2>$tmp.mkfserr 1>$tmp.mkfsstd
+}
+
 # Do the actual mkfs work on SCRATCH_DEV. Firstly mkfs with both MKFS_OPTIONS
 # and user specified mkfs options, if that fails (due to conflicts between mkfs
 # options), do a second mkfs with only user provided mkfs options.
@@ -456,8 +464,7 @@ _scratch_do_mkfs()
 
 	# save mkfs output in case conflict means we need to run again.
 	# only the output for the mkfs that applies should be shown
-	eval "$mkfs_cmd $MKFS_OPTIONS $extra_mkfs_options $SCRATCH_DEV" \
-		2>$tmp.mkfserr 1>$tmp.mkfsstd
+	__scratch_do_mkfs "$mkfs_cmd" "$MKFS_OPTIONS $extra_mkfs_options"
 	mkfs_status=$?
 
 	# a mkfs failure may be caused by conflicts between $MKFS_OPTIONS and
@@ -471,7 +478,7 @@ _scratch_do_mkfs()
 		) >> $seqres.full
 
 		# running mkfs again. overwrite previous mkfs output files
-		eval "$mkfs_cmd $extra_mkfs_options $SCRATCH_DEV" \
+		__scratch_do_mkfs "$mkfs_cmd" "$extra_mkfs_options" \
 			2>$tmp.mkfserr 1>$tmp.mkfsstd
 		mkfs_status=$?
 	fi
