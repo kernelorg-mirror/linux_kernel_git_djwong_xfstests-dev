@@ -567,3 +567,5 @@
 562 auto clone
 715 auto quick rw
 716 auto quick rw
+717 auto quick rw swap
+718 auto quick rw swap
