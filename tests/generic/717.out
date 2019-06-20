@@ -1,0 +1,8 @@
+QA output created by 717
+pwrite: Text file busy
+pwrite: Text file busy
+mmap: Text file busy
+no mapped regions, try 'help mmap'
+ftruncate: Text file busy
+ftruncate: Text file busy
+fallocate: Text file busy
