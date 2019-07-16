@@ -1,0 +1,10 @@
+QA output created by 747
+Scrub for injected media error
+Unfixable error: SCRATCH_MNT/a data: media error at data offset 2FSB length 1FSB.
+SCRATCH_MNT: unfixable errors found: 1
+Unfixable error: SCRATCH_MNT/a data: media error at data offset 2FSB length 1FSB.
+SCRATCH_MNT: unfixable errors found: 1
+od: SCRATCH_MNT/a: read error: Input/output error
+Unfixable error: SCRATCH_MNT/a data: media error at data offset 2FSB length 1FSB.
+SCRATCH_MNT: unfixable errors found: 1
+Scrub after removing injected media error
