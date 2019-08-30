@@ -572,3 +572,5 @@
 567 auto quick rw punch
 717 auto quick rw swap
 718 auto quick rw swap
+719 auto quick quota metadata
+720 auto quick rw pipe splice
