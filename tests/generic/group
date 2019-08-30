@@ -581,4 +581,6 @@
 576 auto quick verity encrypt
 577 auto quick verity
 578 auto quick rw clone
+715 auto quick rw
+716 auto quick rw
 720 auto quick rw pipe splice
