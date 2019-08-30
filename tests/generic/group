@@ -569,5 +569,9 @@
 564 auto quick copy_range
 565 auto quick copy_range
 566 auto quick quota metadata
+715 auto quick rw
+716 auto quick rw
+717 auto quick rw swap
+718 auto quick rw swap
 719 auto quick quota metadata
 720 auto quick rw pipe splice
