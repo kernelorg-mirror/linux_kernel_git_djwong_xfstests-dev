@@ -1,0 +1,4 @@
+QA output created by 749
+ls: cannot access 'TEST_DIR/mount-749/testdir': Structure needs cleaning
+attr_list: Structure needs cleaning
+Could not list "(null)" for TEST_DIR/mount-749/testfile

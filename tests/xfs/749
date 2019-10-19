@@ -1,0 +1,103 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-newer
+# Copyright (c) 2019, Oracle and/or its affiliates.  All Rights Reserved.
+#
+# FS QA Test No. 749
+#
+# See if we catch corrupt directory names or attr names with nulls or slashes
+# in them.
+
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1    # failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	umount $mntpt > /dev/null 2>&1
+	test -n "$loopdev" && _destroy_loop_device $loopdev > /dev/null 2>&1
+	rm -r -f $imgfile $mntpt $tmp.*
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+# real QA test starts here
+_supported_fs xfs
+_supported_os Linux
+_require_test
+
+rm -f $seqres.full
+
+imgfile=$TEST_DIR/img-$seq
+mntpt=$TEST_DIR/mount-$seq
+testdir=$mntpt/testdir
+testfile=$mntpt/testfile
+nullstr="too_many_beans"
+slashstr="are_bad_for_you"
+
+# Format image file
+truncate -s 40m $imgfile
+loopdev=$(_create_loop_device $imgfile)
+$MKFS_XFS_PROG $loopdev >> $seqres.full
+
+# Mount image file
+mkdir -p $mntpt
+mount $loopdev $mntpt
+
+# Create directory entries
+mkdir -p $testdir
+touch $testdir/$nullstr
+touch $testdir/$slashstr
+
+# Create attrs
+touch $testfile
+$ATTR_PROG -s $nullstr -V heh $testfile >> $seqres.full
+$ATTR_PROG -s $slashstr -V heh $testfile >> $seqres.full
+
+# Corrupt the entries
+umount $mntpt
+_destroy_loop_device $loopdev
+cp $imgfile $imgfile.old
+sed -b \
+	-e "s/$nullstr/too_many\x00beans/g" \
+	-e "s/$slashstr/are_bad\/for_you/g" \
+	-i $imgfile
+test "$(md5sum < $imgfile)" != "$(md5sum < $imgfile.old)" ||
+	_fail "sed failed to change the image file?"
+rm -f $imgfile.old
+loopdev=$(_create_loop_device $imgfile)
+mount $loopdev $mntpt
+
+# Try to access the corrupt metadata
+ls $testdir >> $seqres.full 2> $tmp.err
+attr -l $testfile >> $seqres.full 2>> $tmp.err
+cat $tmp.err | _filter_test_dir
+
+# Does scrub complain about this?
+if _supports_xfs_scrub $mntpt $loopdev; then
+	$XFS_SCRUB_PROG -n $mntpt >> $seqres.full 2>&1
+	res=$?
+	test $((res & 1)) -eq 0 && \
+		echo "scrub failed to report corruption ($res)"
+fi
+
+# Does repair complain about this?
+umount $mntpt
+$XFS_REPAIR_PROG -n $loopdev >> $seqres.full 2>&1
+res=$?
+test $res -eq 1 || \
+	echo "repair failed to report corruption ($res)"
+
+_destroy_loop_device $loopdev
+loopdev=
+
+# success, all done
+status=0
+exit

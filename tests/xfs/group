@@ -507,3 +507,4 @@
 509 auto ioctl
 510 auto ioctl quick
 511 auto quick quota
+749 auto quick fuzzers
