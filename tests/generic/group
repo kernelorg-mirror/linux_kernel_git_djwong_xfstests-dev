@@ -588,5 +588,6 @@
 583 auto quick encrypt
 584 auto quick encrypt
 585 auto rename
+721 auto quick atime
 722 auto quick rw falloc
 946 auto quick rw prealloc falloc
