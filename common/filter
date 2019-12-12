@@ -495,7 +495,7 @@ _filter_od()
 		fi
 
 		offset="${line%% *}"
-		printf '%o%s\n' $((offset / BLOCK_SIZE)) "${line#$offset}"
+		printf '%o%s\n' $(("0$offset" / BLOCK_SIZE)) "${line#$offset}"
 	done
 }
 
