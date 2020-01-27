@@ -63,10 +63,19 @@ run_test_individual()
 	# check if the time needs update
 	if [ $update_time -eq 1 ]; then
 		echo "Updating file: $file to timestamp $timestamp"  >> $seqres.full
-		$XFS_IO_PROG -f -c "utimes $timestamp 0 $timestamp 0" $file
+		$XFS_IO_PROG -f -c "utimes $timestamp 0 $timestamp 0" $file >> $tmp.utimes 2>&1
+		cat $tmp.utimes >> $seqres.full
+		if grep -q "Bad value" "$tmp.utimes"; then
+			rm -f $file $tmp.utimes
+			return
+		fi
+		cat $tmp.utimes
+		rm $tmp.utimes
 		if [ $? -ne 0 ]; then
 			echo "Failed to update times on $file" | tee -a $seqres.full
 		fi
+	else
+		test -f $file || return
 	fi
 
 	tsclamp=$((timestamp<tsmin?tsmin:timestamp>tsmax?tsmax:timestamp))
