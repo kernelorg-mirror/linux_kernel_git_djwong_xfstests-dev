@@ -622,6 +622,8 @@
 617 auto rw io_uring stress
 618 auto quick attr
 619 auto rw enospc
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
 947 auto quick rw clone
