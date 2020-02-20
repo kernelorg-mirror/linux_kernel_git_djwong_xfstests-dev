@@ -615,6 +615,8 @@
 610 auto quick prealloc zero
 611 auto quick attr
 612 auto quick clone
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime
 747 auto quick scrub
