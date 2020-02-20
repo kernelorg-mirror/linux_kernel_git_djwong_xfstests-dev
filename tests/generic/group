@@ -620,6 +620,8 @@
 615 auto rw
 616 auto rw io_uring stress
 617 auto rw io_uring stress
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
 747 auto quick scrub
