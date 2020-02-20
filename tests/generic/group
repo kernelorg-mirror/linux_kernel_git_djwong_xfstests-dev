@@ -613,3 +613,5 @@
 608 auto attr quick dax
 609 auto quick rw
 610 auto quick prealloc zero
+721 auto quick atime bigtime
+722 auto quick atime bigtime
