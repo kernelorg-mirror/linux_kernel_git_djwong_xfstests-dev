@@ -513,6 +513,8 @@
 513 auto mount
 514 auto quick db
 515 auto quick quota
+747 auto quick scrub
+748 auto quick scrub
 751 auto quick
 755 auto quick fsmap freeze
 913 auto quick quota
