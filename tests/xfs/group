@@ -529,6 +529,8 @@
 748 auto quick scrub
 751 auto quick
 755 auto quick fsmap freeze
+908 auto quick bigtime
+909 auto quick bigtime quota
 910 auto quick inobtcount
 911 auto quick bigtime
 913 auto quick quota
