@@ -513,6 +513,7 @@
 513 auto mount
 514 auto quick db
 515 auto quick quota
+741 auto quick rw
 747 auto quick scrub
 748 auto quick scrub
 751 auto quick

@@ -598,5 +598,7 @@
 594 auto quick quota
 595 auto quick encrypt
 596 auto quick
+715 auto quick rw
+716 auto quick rw
 720 auto quick rw pipe splice
 721 auto quick atime
