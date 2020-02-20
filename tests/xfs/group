@@ -529,5 +529,6 @@
 748 auto quick scrub
 751 auto quick
 755 auto quick fsmap freeze
+910 auto quick inobtcount
 913 auto quick quota
 914 auto quick reflink
