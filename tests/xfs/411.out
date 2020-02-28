@@ -1,4 +1,12 @@
 QA output created by 411
 Format and populate
 Fuzz refcountbt
+rightsib = ones: online health check failed (0).
+recs[1].startblock = zeroes: online health check failed (0).
+recs[1].refcount = ones: online health check failed (0).
+recs[1].refcount = firstbit: online health check failed (0).
+recs[1].refcount = middlebit: online health check failed (0).
+recs[1].refcount = lastbit: online scrub didn't fail.
+recs[1].refcount = add: online health check failed (0).
+recs[1].refcount = sub: online health check failed (0).
 Done fuzzing refcountbt
