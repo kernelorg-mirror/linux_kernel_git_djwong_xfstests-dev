@@ -1,4 +1,15 @@
 QA output created by 359
 Format and populate
 Fuzz bnobt recs
+numrecs = middlebit: online health check failed (0).
+numrecs = lastbit: online health check failed (0).
+rightsib = ones: online health check failed (0).
+recs[1].startblock = zeroes: online health check failed (0).
+recs[1].blockcount = zeroes: online health check failed (0).
+recs[1].blockcount = ones: online health check failed (0).
+recs[1].blockcount = firstbit: online health check failed (0).
+recs[1].blockcount = middlebit: online health check failed (0).
+recs[1].blockcount = lastbit: online health check failed (0).
+recs[1].blockcount = add: online health check failed (0).
+recs[1].blockcount = sub: online health check failed (0).
 Done fuzzing bnobt recs

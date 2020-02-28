@@ -1,4 +1,6 @@
 QA output created by 363
 Format and populate
 Fuzz cntbt
+numrecs = middlebit: online health check failed (0).
+rightsib = ones: online health check failed (0).
 Done fuzzing cntbt
