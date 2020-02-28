@@ -1,5 +1,8 @@
 QA output created by 391
 Format and populate
 Find leaf1-format dir block
+stat: cannot stat '/opt/S_IFDIR.FMT_LEAF': No such file or directory
 Fuzz leaf1-format dir block
+Metadata corruption detected at 0x559eaf85d560, xfs_agf block 0x4ebc01/0x200
+xfs_db: cannot init perag data (117). Continuing anyway.
 Done fuzzing leaf1-format dir block
