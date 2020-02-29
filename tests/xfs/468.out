@@ -2,4 +2,19 @@ QA output created by 468
 Format and populate
 Find bmbt block
 Fuzz bmbt
+recs[1].startoff = ones: online health check failed (0).
+recs[1].startoff = firstbit: online health check failed (0).
+recs[1].startoff = middlebit: online health check failed (0).
+recs[1].startoff = add: online health check failed (0).
+recs[1].startoff = sub: online health check failed (0).
+recs[1].blockcount = zeroes: online health check failed (0).
+recs[1].blockcount = middlebit: online health check failed (0).
+recs[1].blockcount = lastbit: online health check failed (0).
+recs[1].blockcount = add: online health check failed (0).
+recs[1].extentflag = ones: online health check failed (0).
+recs[1].extentflag = firstbit: online health check failed (0).
+recs[1].extentflag = middlebit: online health check failed (0).
+recs[1].extentflag = lastbit: online health check failed (0).
+recs[1].extentflag = add: online health check failed (0).
+recs[1].extentflag = sub: online health check failed (0).
 Done fuzzing bmbt
