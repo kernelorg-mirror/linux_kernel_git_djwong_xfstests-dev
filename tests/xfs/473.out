@@ -2,4 +2,5 @@ QA output created by 473
 Format and populate
 Find leaf1-format dir block
 Fuzz leaf1-format dir block
+lbests[0] = ones: online scrub didn't fail.
 Done fuzzing leaf1-format dir block
