@@ -622,3 +622,6 @@
 747 auto quick scrub
 947 auto quick rw clone
 948 auto quick rw copy_range
+1200 auto quick swapext quota
+1201 auto quick swapext quota
+1202 auto quick swapext
