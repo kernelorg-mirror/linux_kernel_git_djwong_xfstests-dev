@@ -542,3 +542,4 @@
 911 auto quick bigtime
 913 auto quick quota
 914 auto quick reflink
+1202 auto quick swapext
