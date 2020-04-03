@@ -610,3 +610,6 @@
 716 auto quick rw
 720 auto quick rw pipe splice
 721 auto quick atime
+1200 auto quick swapext quota
+1201 auto quick swapext quota
+1202 auto quick swapext
