@@ -549,3 +549,4 @@
 915 auto quick quota
 916 auto quick realtime growfs
 1202 auto quick swapext
+1208 auto quick swapext
