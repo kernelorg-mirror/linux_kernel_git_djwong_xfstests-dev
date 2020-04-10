@@ -108,6 +108,7 @@ enum {
 	OP_CLONE_RANGE,
 	OP_DEDUPE_RANGE,
 	OP_COPY_RANGE,
+	OP_SWAP_RANGE,
 	OP_MAX_FULL,
 
 	/* integrity operations */
@@ -172,6 +173,7 @@ int	check_file = 0;			/* -X flag enables */
 int	clone_range_calls = 1;		/* -J flag disables */
 int	dedupe_range_calls = 1;		/* -B flag disables */
 int	copy_range_calls = 1;		/* -E flag disables */
+int	swap_range_calls = 1;		/* -0 flag disables */
 int	integrity = 0;			/* -i flag */
 int	fsxgoodfd = 0;
 int	o_direct;			/* -Z */
@@ -268,6 +270,7 @@ static const char *op_names[] = {
 	[OP_CLONE_RANGE] = "clone_range",
 	[OP_DEDUPE_RANGE] = "dedupe_range",
 	[OP_COPY_RANGE] = "copy_range",
+	[OP_SWAP_RANGE] = "swap_range",
 	[OP_FSYNC] = "fsync",
 };
 
@@ -452,6 +455,20 @@ logdump(void)
 			    lp->args[1]);
 			if (overlap)
 				prt("\t******IIII");
+			break;
+		case OP_SWAP_RANGE:
+			prt("SWAP 0x%x thru 0x%x\t(0x%x bytes) to 0x%x thru 0x%x",
+			    lp->args[0], lp->args[0] + lp->args[1] - 1,
+			    lp->args[1],
+			    lp->args[2], lp->args[2] + lp->args[1] - 1);
+			overlap2 = badoff >= lp->args[2] &&
+				  badoff < lp->args[2] + lp->args[1];
+			if (overlap && overlap2)
+				prt("\tSSSS**SSSS");
+			else if (overlap)
+				prt("\tSSSS******");
+			else if (overlap2)
+				prt("\t******SSSS");
 			break;
 		case OP_CLONE_RANGE:
 			prt("CLONE 0x%x thru 0x%x\t(0x%x bytes) to 0x%x thru 0x%x",
@@ -1359,6 +1376,163 @@ do_insert_range(unsigned offset, unsigned length)
 }
 #endif
 
+/* XXX Supplant the VFS definition if we don't find it. */
+#ifndef FISWAPRANGE
+
+/*
+ * Swap part of file1 with part of the file that this ioctl that is being
+ * called against (which we'll call file2).  Filesystems must be able to
+ * complete the operation even if the system goes down.
+ */
+struct file_swap_range {
+	__s64		file1_fd;
+	__s64		file1_offset;	/* file1 offset, bytes */
+	__s64		file2_offset;	/* file2 offset, bytes */
+	__s64		length;		/* bytes to swap */
+
+	__u64		flags;		/* see FILE_SWAP_RANGE_* below */
+
+	/* file2 metadata for optional freshness checks */
+	__s64		file2_ino;	/* inode number */
+	__s64		file2_mtime;	/* modification time */
+	__s64		file2_ctime;	/* change time */
+	__s32		file2_mtime_nsec; /* mod time, nsec */
+	__s32		file2_ctime_nsec; /* change time, nsec */
+
+	__u64		pad[6];		/* must be zeroes */
+};
+
+/*
+ * Atomic swap operations are not required.  This relaxes the requirement that
+ * the filesystem must be able to complete the operation after a crash.
+ */
+#define FILE_SWAP_RANGE_NONATOMIC	(1 << 0)
+
+/*
+ * Check that file2's inode number, mtime, and ctime against the values
+ * provided, and return -EBUSY if there isn't an exact match.
+ */
+#define FILE_SWAP_RANGE_FILE2_FRESH	(1 << 1)
+
+/*
+ * Check that the file1's length is equal to file1_offset + length, and that
+ * file2's length is equal to file2_offset + length.  Returns -EDOM if there
+ * isn't an exact match.
+ */
+#define FILE_SWAP_RANGE_FULL_FILES	(1 << 2)
+
+/*
+ * Swap file data all the way to the ends of both files, and then swap the file
+ * sizes.  This flag can be used to replace a file's contents with a different
+ * amount of data.  length will be ignored.
+ */
+#define FILE_SWAP_RANGE_TO_EOF		(1 << 3)
+
+#define FILE_SWAP_RANGE_ALL_FLAGS	(FILE_SWAP_RANGE_NONATOMIC | \
+					 FILE_SWAP_RANGE_FILE2_FRESH | \
+					 FILE_SWAP_RANGE_FULL_FILES | \
+					 FILE_SWAP_RANGE_TO_EOF)
+
+#define FISWAPRANGE	_IOWR('X', 129, struct file_swap_range)
+
+#endif /* FISWAPRANGE */
+
+#ifdef FISWAPRANGE
+int
+test_swap_range(void)
+{
+	struct file_swap_range	fsr = {
+		.file1_fd = fd,
+		.flags = FILE_SWAP_RANGE_NONATOMIC,
+	};
+
+	if (ioctl(fd, FISWAPRANGE, &fsr) &&
+	    (errno == EOPNOTSUPP || errno == ENOTTY)) {
+		if (!quiet)
+			fprintf(stderr,
+				"main: filesystem does not support "
+				"swap range, disabling!\n");
+		return 0;
+	}
+
+	return 1;
+}
+
+void
+do_swap_range(unsigned offset, unsigned length, unsigned dest)
+{
+	struct file_swap_range	fsr = {
+		.file1_fd = fd,
+		.file1_offset = offset,
+		.file2_offset = dest,
+		.length = length,
+		.flags = FILE_SWAP_RANGE_NONATOMIC,
+	};
+	void *p;
+
+	if (length == 0) {
+		if (!quiet && testcalls > simulatedopcount)
+			prt("skipping zero length swap range\n");
+		log5(OP_SWAP_RANGE, offset, length, dest, FL_SKIPPED);
+		return;
+	}
+
+	if ((loff_t)offset >= file_size || (loff_t)dest >= file_size) {
+		if (!quiet && testcalls > simulatedopcount)
+			prt("skipping swap range behind EOF\n");
+		log5(OP_SWAP_RANGE, offset, length, dest, FL_SKIPPED);
+		return;
+	}
+
+	p = malloc(length);
+	if (!p) {
+		if (!quiet && testcalls > simulatedopcount)
+			prt("skipping swap range due to ENOMEM\n");
+		log5(OP_SWAP_RANGE, offset, length, dest, FL_SKIPPED);
+		return;
+	}
+
+	log5(OP_SWAP_RANGE, offset, length, dest, FL_NONE);
+
+	if (testcalls <= simulatedopcount)
+		goto out_free;
+
+	if ((progressinterval && testcalls % progressinterval == 0) ||
+	    (debug && (monitorstart == -1 || monitorend == -1 ||
+		       dest <= monitorstart || dest + length <= monitorend))) {
+		prt("%lu swap\tfrom 0x%x to 0x%x, (0x%x bytes) at 0x%x\n",
+			testcalls, offset, offset+length, length, dest);
+	}
+
+	if (ioctl(fd, FISWAPRANGE, &fsr) == -1) {
+		prt("swap range: 0x%x to 0x%x at 0x%x\n", offset,
+				offset + length, dest);
+		prterr("do_swap_range: FISWAPRANGE");
+		report_failure(161);
+		goto out_free;
+	}
+
+	memcpy(p, good_buf + offset, length);
+	memcpy(good_buf + offset, good_buf + dest, length);
+	memcpy(good_buf + dest, p, length);
+out_free:
+	free(p);
+}
+
+#else
+int
+test_swap_range(void)
+{
+	return 0;
+}
+
+void
+do_swap_range(unsigned offset, unsigned length, unsigned dest)
+{
+	return;
+}
+#endif
+
 #ifdef FICLONERANGE
 int
 test_clone_range(void)
@@ -1846,6 +2020,7 @@ static int
 op_args_count(int operation)
 {
 	switch (operation) {
+	case OP_SWAP_RANGE:
 	case OP_CLONE_RANGE:
 	case OP_DEDUPE_RANGE:
 	case OP_COPY_RANGE:
@@ -2001,6 +2176,25 @@ test(void)
 		if (zero_range_calls && size && keep_size_calls)
 			keep_size = random() % 2;
 		break;
+	case OP_SWAP_RANGE:
+		{
+			int tries = 0;
+
+			TRIM_OFF_LEN(offset, size, file_size);
+			offset = offset & ~(block_size - 1);
+			size = size & ~(block_size - 1);
+			do {
+				if (tries++ >= 30) {
+					size = 0;
+					break;
+				}
+				offset2 = random();
+				TRIM_OFF(offset2, file_size);
+				offset2 = offset2 & ~(block_size - 1);
+			} while (range_overlaps(offset, offset2, size) ||
+				 offset2 + size > file_size);
+			break;
+		}
 	case OP_CLONE_RANGE:
 		TRIM_OFF_LEN(offset, size, file_size);
 		offset = offset & ~(block_size - 1);
@@ -2083,6 +2277,12 @@ have_op:
 	case OP_INSERT_RANGE:
 		if (!insert_range_calls) {
 			log4(OP_INSERT_RANGE, offset, size, FL_SKIPPED);
+			goto out;
+		}
+		break;
+	case OP_SWAP_RANGE:
+		if (!swap_range_calls) {
+			log5(op, offset, size, offset2, FL_SKIPPED);
 			goto out;
 		}
 		break;
@@ -2169,6 +2369,18 @@ have_op:
 		}
 
 		do_insert_range(offset, size);
+		break;
+	case OP_SWAP_RANGE:
+		if (size == 0) {
+			log5(OP_SWAP_RANGE, offset, size, offset2, FL_SKIPPED);
+			goto out;
+		}
+		if (offset2 + size > maxfilelen) {
+			log5(OP_SWAP_RANGE, offset, size, offset2, FL_SKIPPED);
+			goto out;
+		}
+
+		do_swap_range(offset, size, offset2);
 		break;
 	case OP_CLONE_RANGE:
 		if (size == 0) {
@@ -2280,6 +2492,9 @@ usage(void)
 #endif
 #ifdef HAVE_COPY_FILE_RANGE
 "	-E: Do not use copy range calls\n"
+#endif
+#ifdef FISWAPRANGE
+"	-0: Do not use swap range calls\n"
 #endif
 "	-L: fsxLite - no file creations & no file size changes\n\
 	-N numops: total # operations to do (default infinity)\n\
@@ -2485,7 +2700,7 @@ main(int argc, char **argv)
 	setvbuf(stdout, (char *)0, _IOLBF, 0); /* line buffered stdout */
 
 	while ((ch = getopt_long(argc, argv,
-				 "b:c:dfg:i:j:kl:m:no:p:qr:s:t:w:xyABD:EFJKHzCILN:OP:RS:WXZ",
+				 "b:c:dfg:i:j:kl:m:no:p:qr:s:t:w:xyAB0D:EFJKHzCILN:OP:RS:WXZ",
 				 longopts, NULL)) != EOF)
 		switch (ch) {
 		case 'b':
@@ -2615,6 +2830,9 @@ main(int argc, char **argv)
 			break;
 		case 'I':
 			insert_range_calls = 0;
+			break;
+		case '0':
+			swap_range_calls = 0;
 			break;
 		case 'J':
 			clone_range_calls = 0;
@@ -2849,6 +3067,8 @@ main(int argc, char **argv)
 		dedupe_range_calls = test_dedupe_range();
 	if (copy_range_calls)
 		copy_range_calls = test_copy_range();
+	if (swap_range_calls)
+		swap_range_calls = test_swap_range();
 
 	while (numops == -1 || numops--)
 		if (!test())
