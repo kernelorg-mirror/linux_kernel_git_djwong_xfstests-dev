@@ -45,6 +45,18 @@ echo "Fuzz inode"
 _scratch_xfs_fuzz_metadata '' 'online'  "inode ${inum}" >> $seqres.full
 echo "Done fuzzing inode"
 
+# Now fuzz the block maps of each directory type.
+for dirtype in BLOCK LEAF LEAFN NODE; do
+	echo "Fuzz block map for ${dirtype}"
+	_scratch_mount
+	inum=$(stat -c '%i' $SCRATCH_MNT/S_IFDIR.FMT_${dirtype})
+	_scratch_unmount
+
+	echo "Fuzz inode"
+	_scratch_xfs_fuzz_metadata 'u*.bmx' 'online'  "inode ${inum}" >> $seqres.full
+	echo "Done fuzzing inode"
+done
+
 # success, all done
 status=0
 exit
