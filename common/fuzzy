@@ -211,7 +211,16 @@ __scratch_xfs_fuzz_field_test() {
 		fi
 
 		__scratch_xfs_fuzz_unmount
-	elif [ "${repair}" = "online" ] || [ "${repair}" = "both" ]; then
+	elif [ "${repair}" = "online" ]; then
+		(>&2 echo "mount failed ($res) with ${field} = ${fuzzverb}, cannot make further progress.")
+
+		echo "+ Make sure corruption is detected by offline repair"
+		_scratch_xfs_repair -n 2>&1
+		res=$?
+		test $res -ne 0 && \
+			(>&2 echo "offline scrub ($res) with ${field} = ${fuzzverb}.")
+		return
+	elif [ "${repair}" = "both" ]; then
 		(>&2 echo "mount failed ($res) with ${field} = ${fuzzverb}.")
 	fi
 
