@@ -40,9 +40,21 @@ _scratch_mount
 inum=$(stat -c '%i' $SCRATCH_MNT/ATTR.FMT_BTREE)
 _scratch_unmount
 
-echo "Fuzz inode"
+echo "Fuzz inode ${inum}"
 _scratch_xfs_fuzz_metadata '' 'offline'  "inode ${inum}" >> $seqres.full
 echo "Done fuzzing inode"
+
+# Now fuzz the block maps of each attr type.
+for attrtype in EXTENTS_REMOTE3K EXTENTS_REMOTE4K LEAF NODE; do
+	echo "Fuzz block map for ${attrtype}"
+	_scratch_mount
+	inum=$(stat -c '%i' $SCRATCH_MNT/ATTR.FMT_${attrtype})
+	_scratch_unmount
+
+	echo "Fuzz inode ${inum}"
+	_scratch_xfs_fuzz_metadata 'a*.bmx' 'offline'  "inode ${inum}" >> $seqres.full
+	echo "Done fuzzing inode"
+done
 
 # success, all done
 status=0
