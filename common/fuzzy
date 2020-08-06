@@ -253,7 +253,7 @@ __scratch_xfs_fuzz_field_test() {
 		(>&2 echo "mount failed ($res) with ${field} = ${fuzzverb}, cannot make further progress.")
 
 		echo "+ Make sure corruption is detected by offline repair"
-		_scratch_xfs_repair -n 2>&1
+		_scratch_xfs_repair -P -n 2>&1
 		res=$?
 		test $res -ne 0 && \
 			(>&2 echo "offline scrub ($res) with ${field} = ${fuzzverb}.")
@@ -268,7 +268,7 @@ __scratch_xfs_fuzz_field_test() {
 		_scratch_xfs_check >> $seqres.full 2>&1
 		res1=$?
 		echo "OFFLINE XFS REPAIR -N" >> $seqres.full
-		_scratch_xfs_repair -n >> $seqres.full 2>&1
+		_scratch_xfs_repair -P -n >> $seqres.full 2>&1
 		res2=$?
 		if [ "$res1" -ne 0 ] && [ "$res2" -eq 0 ]; then
 			(>&2 echo "xfs_repair passed but xfs_check failed ($res1) with ${field} = ${fuzzverb}.")
@@ -292,7 +292,7 @@ __scratch_xfs_fuzz_field_test() {
 	# See if repair finds a clean fs
 	if [ "${repair}" != "none" ]; then
 		echo "+ Make sure error is gone (offline)"
-		_scratch_xfs_repair -n 2>&1
+		_scratch_xfs_repair -P -n 2>&1
 		res=$?
 		test $res -ne 0 && \
 			(>&2 echo "offline re-scrub ($res) with ${field} = ${fuzzverb}.")
@@ -335,7 +335,7 @@ __scratch_xfs_fuzz_field_test() {
 	# See if repair finds a clean fs
 	if [ "${repair}" != "none" ]; then
 		echo "+ Re-check the filesystem (offline)"
-		_scratch_xfs_repair -n 2>&1
+		_scratch_xfs_repair -P -n 2>&1
 		res=$?
 		test $res -ne 0 && \
 			(>&2 echo "re-repair failed ($res) with ${field} = ${fuzzverb}.")
