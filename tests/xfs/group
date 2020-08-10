@@ -539,6 +539,7 @@
 748 auto quick scrub
 753 auto quick mkfs
 756 auto quick rw scrub
+757 auto quick attr repair
 908 auto quick bigtime
 909 auto quick bigtime quota
 910 auto quick inobtcount
