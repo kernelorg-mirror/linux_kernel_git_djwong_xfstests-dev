@@ -23,6 +23,13 @@ _scratch_fuzz_modify() {
 	sync
 	rm -rf "/tmp/afile"
 
+	echo "+++ read directory tree"
+	ls -laR "${SCRATCH_MNT}" > /dev/null 2>&1
+
+	echo "+++ copy directory tree"
+	mkdir "${SCRATCH_MNT}/alt/"
+	cp -p -R -d -u --reflink=auto -t "${SCRATCH_MNT}/alt/" "${SCRATCH_MNT}"/*
+
 	echo "+++ create files"
 	mkdir -p "${SCRATCH_MNT}/test.moo"
 	$XFS_IO_PROG -f -c 'pwrite -S 0x80 0 65536' "${SCRATCH_MNT}/test.moo/urk" > /dev/null
