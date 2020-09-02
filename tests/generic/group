@@ -622,3 +622,5 @@
 617 auto rw io_uring stress
 618 auto quick attr
 619 auto rw enospc
+947 auto quick rw clone
+948 auto quick rw copy_range
