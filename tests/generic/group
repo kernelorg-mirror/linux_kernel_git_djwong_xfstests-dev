@@ -616,3 +616,5 @@
 611 auto quick attr
 721 auto quick atime bigtime
 722 auto quick atime bigtime
+947 auto quick rw clone
+948 auto quick rw copy_range
