@@ -1,0 +1,11 @@
+QA output created by 760
+test fpunch
+fallocate: Invalid argument
+test finsert
+fallocate: Invalid argument
+test fcollapse
+fallocate: Invalid argument
+test fzero
+fallocate: Invalid argument
+test funshare
+test falloc
