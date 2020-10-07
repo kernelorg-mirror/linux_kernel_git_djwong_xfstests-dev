@@ -1,0 +1,87 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2020, Oracle and/or its affiliates.  All Rights Reserved.
+#
+# FS QA Test No. 918
+#
+# Make sure the xfs_db ls command works the way the author thinks it does.
+# This means that we can list the current directory, list an arbitrary path,
+# and we can't list things that aren't directories.
+#
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1    # failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.*
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+# real QA test starts here
+_supported_fs xfs
+_require_xfs_db_command "path"
+_require_xfs_db_command "ls"
+_require_scratch
+
+echo "Format filesystem and populate"
+_scratch_mkfs > $seqres.full
+_scratch_mount >> $seqres.full
+
+$XFS_INFO_PROG $SCRATCH_MNT | grep -q ftype=1 || \
+	_notrun "filesystem does not support ftype"
+
+filter_ls() {
+	sed	-e "s/^$root_ino /rootd/g" \
+		-e "s/^$a_ino /a_ino/g" \
+		-e "s/^$b_ino /b_ino/g" \
+		-e "s/^$c_ino /c_ino/g" \
+		-e "s/^$d_ino /d_ino/g" \
+		-e "s/^$e_ino /e_ino/g" |
+	awk '{printf("%s %s %s %s %s\n", $1, $2, $3, $4, $5);}'
+}
+
+mkdir $SCRATCH_MNT/a
+mkdir $SCRATCH_MNT/a/b
+$XFS_IO_PROG -f -c 'pwrite 0 61' $SCRATCH_MNT/a/c >> $seqres.full
+ln $SCRATCH_MNT/a/c $SCRATCH_MNT/d
+ln -s -f b $SCRATCH_MNT/a/e
+
+root_ino=$(stat -c '%i' $SCRATCH_MNT)
+a_ino=$(stat -c '%i' $SCRATCH_MNT/a)
+b_ino=$(stat -c '%i' $SCRATCH_MNT/a/b)
+c_ino=$(stat -c '%i' $SCRATCH_MNT/a/c)
+d_ino=$(stat -c '%i' $SCRATCH_MNT/d)
+e_ino=$(stat -c '%i' $SCRATCH_MNT/a/e)
+
+_scratch_unmount
+
+echo "Manually navigate to root dir then list"
+_scratch_xfs_db -c 'sb 0' -c 'addr rootino' -c ls | filter_ls
+
+echo "Use path to navigate to root dir then list"
+_scratch_xfs_db -c 'path /' -c ls | filter_ls
+
+echo "Use path to navigate to /a then list"
+_scratch_xfs_db -c 'path /a' -c ls | filter_ls
+
+echo "Use path to navigate to /a/b then list"
+_scratch_xfs_db -c 'path /a/b' -c ls | filter_ls
+
+echo "Use path to navigate to /a/c then list"
+_scratch_xfs_db -c 'path /a/c' -c ls | \
+	sed -e "s/^$c_ino /c_ino /g" -e "s/<$c_ino>/<c_ino>/g" |
+	awk '{printf("%s %s %s\n", $1, $2, $5);}'
+
+# success, all done
+status=0
+exit

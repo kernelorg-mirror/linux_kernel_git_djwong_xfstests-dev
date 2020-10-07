@@ -1,0 +1,23 @@
+QA output created by 918
+Format filesystem and populate
+Manually navigate to root dir then list
+rootd directory 0x0000002e 1 .
+rootd directory 0x0000172e 2 ..
+a_ino directory 0x00000061 1 a
+c_ino regular 0x00000064 1 d
+Use path to navigate to root dir then list
+rootd directory 0x0000002e 1 .
+rootd directory 0x0000172e 2 ..
+a_ino directory 0x00000061 1 a
+c_ino regular 0x00000064 1 d
+Use path to navigate to /a then list
+a_ino directory 0x0000002e 1 .
+rootd directory 0x0000172e 2 ..
+b_ino directory 0x00000062 1 b
+c_ino regular 0x00000063 1 c
+e_ino symlink 0x00000065 1 e
+Use path to navigate to /a/b then list
+b_ino directory 0x0000002e 1 .
+a_ino directory 0x0000172e 2 ..
+Use path to navigate to /a/c then list
+c_ino regular <c_ino>
