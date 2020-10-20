@@ -1101,6 +1101,22 @@ _xfs_get_cowgc_interval() {
 	fi
 }
 
+_require_xfs_scratch_metadir()
+{
+	_require_scratch
+
+	_scratch_mkfs > /dev/null
+	_scratch_xfs_db -c version | grep -q METADIR || \
+		_notrun "metadir not supported by scratch filesystem type: $FSTYP"
+	_try_scratch_mount
+	res=$?
+	if [ $res -ne 0 ]; then
+		_notrun "metadir not supported by scratch filesystem type: $FSTYP"
+	else
+		_scratch_unmount
+	fi
+}
+
 # Resolve a metadata directory tree path and return the inode number.
 _scratch_metadir_lookup() {
 	local res="$(_scratch_xfs_db -c "ls -i -m $1")"
