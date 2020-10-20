@@ -1090,3 +1090,19 @@ _xfs_get_cowgc_interval() {
 		_fail "Can't find cowgc interval procfs knob?"
 	fi
 }
+
+_require_xfs_scratch_metadir()
+{
+	_require_scratch
+
+	_scratch_mkfs > /dev/null
+	_scratch_xfs_db -c version | grep -q METADIR || \
+		_notrun "metadir not supported by scratch filesystem type: $FSTYP"
+	_try_scratch_mount
+	res=$?
+	if [ $res -ne 0 ]; then
+		_notrun "metadir not supported by scratch filesystem type: $FSTYP"
+	else
+		_scratch_unmount
+	fi
+}
