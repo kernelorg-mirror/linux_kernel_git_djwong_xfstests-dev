@@ -35,11 +35,10 @@ rm -f $seqres.full
 _supported_fs xfs
 
 _require_check_dmesg
-_require_scratch
+_require_scratch_nocheck
 _require_test_program "punch-alternating"
 _require_xfs_io_command "falloc"
 _require_xfs_db_write_array
-_require_no_rtinherit
 
 # This is only a v5 filesystem problem
 _require_scratch_xfs_crc
@@ -74,6 +73,10 @@ runtest() {
 	echo "TEST $cmd" | tee /dev/ttyprintk
 	echo "TEST $cmd" >> $seqres.full
 	_scratch_mkfs >> $seqres.full
+
+	# This test depends on specific behaviors of the data device, so create
+	# all files on it.
+	$XFS_IO_PROG -c 'chattr -t' $SCRATCH_MNT
 
 	# Record what was here before
 	echo "FS BEFORE" >> $seqres.full
