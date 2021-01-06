@@ -1,0 +1,190 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2021 Oracle.  All Rights Reserved.
+#
+# FS QA Test No. 764
+#
+# Functional testing for xfs_admin -O, which is a new switch that enables us to
+# add features to an existing filesystem.  In these test scenarios, we try to
+# add the inode btree counter 'feature' to the filesystem, and make sure that
+# NEEDSREPAIR (aka the thing that prevents us from mounting after an upgrade
+# fails) is clear if the upgraded succeeds and set if it fails.
+#
+# The first scenario tests that we can't add inobtcount to the V4 format,
+# which is now deprecated.
+#
+# The middle five scenarios ensure that xfs_admin -O works even when external
+# log devices and realtime volumes are specified.  This part is purely an
+# exerciser for the userspace tools; kernel support for those features is not
+# required.
+#
+# The last scenario uses a xfs_repair debug knob to simulate failure during an
+# inobtcount upgrade, then checks that mounts fail when the flag is enabled,
+# that repair clears the flag, and mount works after repair.
+
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1    # failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.* $fake_logfile $fake_rtfile
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+# real QA test starts here
+_supported_fs xfs
+_require_test
+_require_xfs_scratch_inobtcount
+_require_command "$XFS_ADMIN_PROG" "xfs_admin"
+_require_xfs_repair_upgrade inobtcount
+
+rm -f $seqres.full
+
+note() {
+	echo "$@" | tee -a $seqres.full
+}
+
+note "S1: Cannot add inobtcount to a V4 fs"
+_scratch_mkfs -m crc=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+
+# Middle five scenarios: Make sure upgrades work with various external device
+# configurations.
+note "S2: Check that setting with xfs_admin + logdev works"
+fake_logfile=$TEST_DIR/scratch.log
+rm -f $fake_logfile
+truncate -s 500m $fake_logfile
+
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+USE_EXTERNAL=yes
+SCRATCH_LOGDEV=$fake_logfile
+
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+
+note "Check clean"
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+
+note "S3: Check that setting with xfs_admin + realtime works"
+fake_rtfile=$TEST_DIR/scratch.rt
+rm -f $fake_rtfile
+truncate -s 500m $fake_rtfile
+
+old_external=$USE_EXTERNAL
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=yes
+SCRATCH_RTDEV=$fake_rtfile
+
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+
+note "Check clean"
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_RTDEV=$old_rtdev
+
+note "S4: Check that setting with xfs_admin + realtime + logdev works"
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=yes
+SCRATCH_LOGDEV=$fake_logfile
+SCRATCH_RTDEV=$fake_rtfile
+
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+
+note "Check clean"
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+SCRATCH_RTDEV=$old_rtdev
+
+note "S5: Check that setting with xfs_admin + nortdev + nologdev works"
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=
+SCRATCH_LOGDEV=
+SCRATCH_RTDEV=
+
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+
+note "Check clean"
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+SCRATCH_RTDEV=$old_rtdev
+
+# Run our test with the test runner's config last so that the post-test check
+# won't trip over our artificial log/rt devices
+note "S6: Check that setting with xfs_admin testrunner config works"
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+_scratch_xfs_admin -O inobtcount=1 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+
+note "Check clean"
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+note "S7: Simulate failure during upgrade process"
+_scratch_mkfs -m crc=1,inobtcount=0 >> $seqres.full
+XFS_REPAIR_FAIL_AFTER_PHASE=2 _scratch_xfs_repair -c inobtcount=1 2>> $seqres.full
+test $? -eq 137 || echo "repair should have been killed??"
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR || \
+	echo "needsrepair should have been set on fs"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "inobtcount should have been set on fs"
+_try_scratch_mount &> $tmp.mount
+res=$?
+_filter_scratch < $tmp.mount
+if [ $res -eq 0 ]; then
+	echo "needsrepair should have prevented mount"
+	_scratch_unmount
+fi
+_scratch_xfs_repair 2>> $seqres.full
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_repair should have cleared needsrepair?"
+_scratch_xfs_db -c 'version' | grep -q INOBTCNT || \
+	echo "xfs_admin should have set inobtcount?"
+_scratch_mount
+
+# success, all done
+status=0
+exit
