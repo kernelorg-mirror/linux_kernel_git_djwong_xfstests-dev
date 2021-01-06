@@ -628,6 +628,8 @@
 623 auto quick shutdown
 624 auto quick verity
 625 auto quick verity
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
 947 auto quick rw clone
