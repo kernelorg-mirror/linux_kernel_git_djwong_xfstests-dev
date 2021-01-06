@@ -1,0 +1,18 @@
+QA output created by 908
+Running xfs_repair to upgrade filesystem.
+Large timestamp feature only supported on V5 filesystems.
+Running xfs_repair to upgrade filesystem.
+Running xfs_repair to upgrade filesystem.
+Adding inode btree counts to filesystem.
+Adding large timestamp support to filesystem.
+before upgrade:
+915909559
+915909559
+Running xfs_repair to upgrade filesystem.
+Adding large timestamp support to filesystem.
+after upgrade:
+915909559
+7956915742
+after upgrade and remount:
+915909559
+7956915742
