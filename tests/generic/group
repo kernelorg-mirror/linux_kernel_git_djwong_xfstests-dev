@@ -625,6 +625,8 @@
 620 auto mount quick
 621 auto quick encrypt
 622 auto shutdown metadata atime
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
 947 auto quick rw clone
