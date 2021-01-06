@@ -522,6 +522,8 @@
 729 dangerous_scrub dangerous_online_repair
 730 dangerous_scrub dangerous_online_repair
 731 dangerous_scrub dangerous_online_repair
+732 fsmap dangerous
+733 scrub dangerous
 741 auto quick rw
 746 auto quick online_repair
 747 auto quick scrub
@@ -534,6 +536,7 @@
 767 auto quick quota realtime
 768 auto quick repair
 770 auto repair
+771 scrub dangerous
 773 auto quick repair
 908 auto quick bigtime
 909 auto quick bigtime quota
