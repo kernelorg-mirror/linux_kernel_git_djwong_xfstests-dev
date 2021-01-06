@@ -626,3 +626,5 @@
 621 auto quick encrypt
 622 auto shutdown metadata atime
 623 auto quick shutdown
+947 auto quick rw clone
+948 auto quick rw copy_range
