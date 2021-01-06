@@ -533,6 +533,7 @@
 764 auto quick repair
 765 auto quick quota
 768 auto quick repair
+910 auto quick inobtcount
 915 auto quick quota
 917 auto quick db
 918 auto quick db
