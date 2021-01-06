@@ -432,6 +432,21 @@ _supports_xfs_scrub()
 	return 0
 }
 
+# Save a compressed snapshot of a corrupt xfs filesystem for later debugging.
+_snapshot_xfs() {
+	local metadump="$1"
+	local device="$2"
+	local logdev="$3"
+	local options="-a -o"
+
+	if [ "$logdev" != "none" ]; then
+		options="$options -l $logdev"
+	fi
+
+	$XFS_METADUMP_PROG $options "$device" "$metadump" >> "$seqres.full" 2>&1
+	gzip -f "$metadump" >> "$seqres.full" 2>&1 &
+}
+
 # run xfs_check and friends on a FS.
 _check_xfs_filesystem()
 {
@@ -482,6 +497,9 @@ _check_xfs_filesystem()
 		# mounted ...
 		mountpoint=`_umount_or_remount_ro $device`
 	fi
+	if [ "$ok" -ne 1 ] && [ "$SNAPSHOT_CORRUPT_XFS" = "1" ]; then
+		_snapshot_xfs "$seqres.scrub.md" "$device" "$2"
+	fi
 
 	$XFS_LOGPRINT_PROG -t $extra_log_options $device 2>&1 \
 		| tee $tmp.logprint | grep -q "<CLEAN>"
@@ -491,6 +509,8 @@ _check_xfs_filesystem()
 		cat $tmp.logprint			>>$seqres.full
 		echo "*** end xfs_logprint output"	>>$seqres.full
 
+		test "$SNAPSHOT_CORRUPT_XFS" = "1" && \
+			_snapshot_xfs "$seqres.logprint.md" "$device" "$2"
 		ok=0
 	fi
 
@@ -516,6 +536,8 @@ _check_xfs_filesystem()
 		cat $tmp.repair				>>$seqres.full
 		echo "*** end xfs_repair output"	>>$seqres.full
 
+		test "$SNAPSHOT_CORRUPT_XFS" = "1" && \
+			_snapshot_xfs "$seqres.repair.md" "$device" "$2"
 		ok=0
 	fi
 	rm -f $tmp.fs_check $tmp.logprint $tmp.repair
@@ -529,6 +551,8 @@ _check_xfs_filesystem()
 			cat $tmp.repair				>>$seqres.full
 			echo "*** end xfs_repair output"	>>$seqres.full
 
+			test "$SNAPSHOT_CORRUPT_XFS" = "1" && \
+				_snapshot_xfs "$seqres.rebuild.md" "$device" "$2"
 			ok=0
 		fi
 		rm -f $tmp.repair
@@ -540,6 +564,8 @@ _check_xfs_filesystem()
 			cat $tmp.repair				>>$seqres.full
 			echo "*** end xfs_repair output"	>>$seqres.full
 
+			test "$SNAPSHOT_CORRUPT_XFS" = "1" && \
+				_snapshot_xfs "$seqres.rebuildrepair.md" "$device" "$2"
 			ok=0
 		fi
 		rm -f $tmp.repair
