@@ -527,6 +527,7 @@
 537 auto quick
 538 auto stress
 539 auto quick mount
+747 auto quick scrub
 757 auto quick attr repair
 908 auto quick bigtime
 909 auto quick bigtime quota
