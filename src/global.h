@@ -171,4 +171,10 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef HAVE_FIEXCHANGE
+# include <linux/fiexchange.h>
+#else
+# include "fiexchange.h"
+#endif
+
 #endif /* GLOBAL_H */
