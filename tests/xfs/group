@@ -527,9 +527,11 @@
 741 auto quick rw
 746 auto quick online_repair
 747 auto quick scrub
+756 auto quick rw scrub
 757 auto quick attr repair
 759 auto quick rw realtime
 760 auto quick rw realtime collapse insert unshare zero prealloc
+762 auto quick rw scrub realtime
 764 auto quick repair
 768 auto quick repair
 770 auto repair
