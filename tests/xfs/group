@@ -531,6 +531,7 @@
 915 auto quick quota
 917 auto quick db
 918 auto quick db
+919 auto quick clone realtime
 1202 auto quick swapext
 1208 auto quick swapext
 1209 auto quick swapext
