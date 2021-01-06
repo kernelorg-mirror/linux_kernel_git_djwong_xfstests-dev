@@ -534,7 +534,9 @@
 741 auto quick rw
 746 auto quick online_repair
 747 auto quick scrub
+756 auto quick rw scrub
 757 auto quick attr repair
+762 auto quick rw scrub realtime
 764 auto quick repair
 768 auto quick repair
 770 auto repair
