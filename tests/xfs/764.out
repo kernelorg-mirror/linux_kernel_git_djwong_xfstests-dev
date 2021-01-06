@@ -1,0 +1,17 @@
+QA output created by 764
+needsrepair flag only supported on V5 filesystems.
+Check that setting with xfs_admin + logdev works
+Marking filesystem in need of repair.
+Check clean
+Check that setting with xfs_admin + realtime works
+Marking filesystem in need of repair.
+Check clean
+Check that setting with xfs_admin + realtime + logdev works
+Marking filesystem in need of repair.
+Check clean
+Check that setting with xfs_admin + nortdev + nologdev works
+Marking filesystem in need of repair.
+Check clean
+Check that setting with xfs_admin testrunner config works
+Marking filesystem in need of repair.
+Check clean

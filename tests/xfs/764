@@ -1,0 +1,141 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2021 Oracle.  All Rights Reserved.
+#
+# FS QA Test No. 764
+#
+# Check that we can flag a filesystem as needing xfs_repair, that we can't
+# do that to a filesystem requiring repair, that mounts fail when the flag is
+# enabled, that repair clears the flag, and mount works after repair.
+
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+here=`pwd`
+tmp=/tmp/$$
+status=1    # failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+	cd /
+	rm -f $tmp.* $fake_logfile $fake_rtfile
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+
+# real QA test starts here
+_supported_fs xfs
+_require_test
+_require_scratch_nocheck
+_require_command "$XFS_ADMIN_PROG" "xfs_admin"
+_require_xfs_repair_upgrade needsrepair
+
+rm -f $seqres.full
+
+# Make sure we can't upgrade a V4 filesystem
+_scratch_mkfs -m crc=0 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+
+echo "Check that setting with xfs_admin + logdev works" | tee -a $seqres.full
+
+fake_logfile=$TEST_DIR/scratch.log
+rm -f $fake_logfile
+truncate -s 500m $fake_logfile
+
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+USE_EXTERNAL=yes
+SCRATCH_LOGDEV=$fake_logfile
+
+_scratch_mkfs -m crc=1 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+
+echo "Check clean" | tee -a $seqres.full
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+
+echo "Check that setting with xfs_admin + realtime works" | tee -a $seqres.full
+
+fake_rtfile=$TEST_DIR/scratch.rt
+rm -f $fake_rtfile
+truncate -s 500m $fake_rtfile
+
+old_external=$USE_EXTERNAL
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=yes
+SCRATCH_RTDEV=$fake_rtfile
+
+_scratch_mkfs -m crc=1 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+
+echo "Check clean" | tee -a $seqres.full
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_RTDEV=$old_rtdev
+
+echo "Check that setting with xfs_admin + realtime + logdev works" | tee -a $seqres.full
+
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=yes
+SCRATCH_LOGDEV=$fake_logfile
+SCRATCH_RTDEV=$fake_rtfile
+
+_scratch_mkfs -m crc=1 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+
+echo "Check clean" | tee -a $seqres.full
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+SCRATCH_RTDEV=$old_rtdev
+
+echo "Check that setting with xfs_admin + nortdev + nologdev works" | tee -a $seqres.full
+
+old_external=$USE_EXTERNAL
+old_logdev=$SCRATCH_LOGDEV
+old_rtdev=$SCRATCH_RTDEV
+USE_EXTERNAL=
+SCRATCH_LOGDEV=
+SCRATCH_RTDEV=
+
+_scratch_mkfs -m crc=1 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+
+echo "Check clean" | tee -a $seqres.full
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+USE_EXTERNAL=$old_external
+SCRATCH_LOGDEV=$old_logdev
+SCRATCH_RTDEV=$old_rtdev
+
+# Run our test with the test runner's config last so that the post-test check
+# won't trip over our artificial log/rt devices
+echo "Check that setting with xfs_admin testrunner config works" | tee -a $seqres.full
+_scratch_mkfs -m crc=1 >> $seqres.full
+_scratch_xfs_admin -O needsrepair=1
+_scratch_xfs_db -c 'version' | grep -q NEEDSREPAIR && \
+	echo "xfs_admin should have cleared needsrepair?"
+
+echo "Check clean" | tee -a $seqres.full
+_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
+
+# success, all done
+status=0
+exit
