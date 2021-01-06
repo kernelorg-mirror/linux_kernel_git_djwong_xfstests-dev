@@ -1,0 +1,21 @@
+QA output created by 764
+S1: Cannot add inobtcount to a V4 fs
+Inode btree count feature only supported on V5 filesystems.
+S2: Check that setting with xfs_admin + logdev works
+Adding inode btree counts to filesystem.
+Check clean
+S3: Check that setting with xfs_admin + realtime works
+Adding inode btree counts to filesystem.
+Check clean
+S4: Check that setting with xfs_admin + realtime + logdev works
+Adding inode btree counts to filesystem.
+Check clean
+S5: Check that setting with xfs_admin + nortdev + nologdev works
+Adding inode btree counts to filesystem.
+Check clean
+S6: Check that setting with xfs_admin testrunner config works
+Adding inode btree counts to filesystem.
+Check clean
+S7: Simulate failure during upgrade process
+Adding inode btree counts to filesystem.
+mount: SCRATCH_MNT: mount(2) system call failed: Structure needs cleaning.
