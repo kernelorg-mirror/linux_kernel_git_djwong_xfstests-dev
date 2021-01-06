@@ -636,5 +636,7 @@
 631 auto rw overlay rename
 632 auto quick mount
 633 auto quick atime attr cap idmapped io_uring mount perms rw unlink
+715 auto quick rw
+716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
