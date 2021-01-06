@@ -1153,13 +1153,15 @@ _require_xfs_repair_upgrade()
 		_notrun "xfs_repair does not support upgrading fs with $type"
 }
 
-_require_xfs_scratch_inobtcount()
+# Require that the scratch device exists, that mkfs can format with inobtcount
+# enabled, and that the kernel can mount such a filesystem.
+_require_scratch_xfs_inobtcount()
 {
 	_require_scratch
 
 	_scratch_mkfs -m inobtcount=1 &> /dev/null || \
-		_notrun "mkfs.xfs doesn't have inobtcount feature"
+		_notrun "mkfs.xfs doesn't support inobtcount feature"
 	_try_scratch_mount || \
-		_notrun "inobtcount not supported by scratch filesystem type: $FSTYP"
+		_notrun "kernel doesn't support xfs inobtcount feature"
 	_scratch_unmount
 }
