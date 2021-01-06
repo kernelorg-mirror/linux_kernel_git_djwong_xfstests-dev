@@ -1,0 +1,12 @@
+QA output created by 910
+Running xfs_repair to upgrade filesystem.
+Inode btree count feature only supported on V5 filesystems.
+Running xfs_repair to upgrade filesystem.
+Inode btree count feature requires free inode btree.
+Running xfs_repair to upgrade filesystem.
+Adding inode btree counts to filesystem.
+ino_blocks = NONZERO
+fino_blocks = NONZERO
+moo
+Running xfs_repair to upgrade filesystem.
+Filesystem already has inode btree counts.
