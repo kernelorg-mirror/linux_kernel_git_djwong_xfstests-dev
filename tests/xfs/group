@@ -521,6 +521,7 @@
 537 auto quick
 538 auto stress
 539 auto quick mount
+747 auto quick scrub
 757 auto quick attr repair
 764 auto quick admin
 768 auto quick repair
