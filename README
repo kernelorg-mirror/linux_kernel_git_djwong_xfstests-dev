@@ -109,6 +109,8 @@ Preparing system for tests:
              - Set TEST_FS_MODULE_RELOAD=1 to unload the module and reload
                it between test invocations.  This assumes that the name of
                the module is the same as FSTYP.
+	     - Set SNAPSHOT_CORRUPT_XFS=1 to record compressed metadumps of XFS
+	       filesystems if the various stages of _check_xfs_filesystem fail.
 
         - or add a case to the switch in common/config assigning
           these variables based on the hostname of your test
