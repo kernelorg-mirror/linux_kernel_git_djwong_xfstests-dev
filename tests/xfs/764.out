@@ -1,0 +1,21 @@
+QA output created by 764
+S1: Cannot add needsrepair to a V4 fs
+needsrepair flag only supported on V5 filesystems.
+S2: Check that setting with xfs_admin + logdev works
+Marking filesystem in need of repair.
+Check clean
+S3: Check that setting with xfs_admin + realtime works
+Marking filesystem in need of repair.
+Check clean
+S4: Check that setting with xfs_admin + realtime + logdev works
+Marking filesystem in need of repair.
+Check clean
+S5: Check that setting with xfs_admin + nortdev + nologdev works
+Marking filesystem in need of repair.
+Check clean
+S6: Check that setting with xfs_admin testrunner config works
+Marking filesystem in need of repair.
+Check clean
+S7: Simulate failure during upgrade process
+Marking filesystem in need of repair.
+mount: SCRATCH_MNT: mount(2) system call failed: Structure needs cleaning.

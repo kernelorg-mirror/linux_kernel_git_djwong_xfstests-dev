@@ -1,0 +1,3 @@
+QA output created by 768
+Marking filesystem in need of repair.
+mount: SCRATCH_MNT: mount(2) system call failed: Structure needs cleaning.
