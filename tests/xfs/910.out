@@ -1,0 +1,8 @@
+QA output created by 910
+Inode btree count feature only supported on V5 filesystems.
+Inode btree count feature requires free inode btree.
+Adding inode btree counts to filesystem.
+ino_blocks = NONZERO
+fino_blocks = NONZERO
+moo
+Filesystem already has inode btree counts.
