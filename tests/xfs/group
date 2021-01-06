@@ -509,6 +509,8 @@
 765 auto quick quota
 768 auto quick repair
 770 auto repair
+908 auto quick bigtime
+909 auto quick bigtime quota
 910 auto quick inobtcount
 911 auto quick bigtime
 915 auto quick quota
