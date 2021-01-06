@@ -639,3 +639,5 @@
 634 auto quick atime bigtime
 635 auto quick atime bigtime shutdown
 636 auto quick swap
+715 auto quick rw
+716 auto quick rw
