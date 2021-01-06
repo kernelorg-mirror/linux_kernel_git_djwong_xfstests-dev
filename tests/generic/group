@@ -637,4 +637,7 @@
 716 auto quick rw
 721 auto quick atime bigtime
 722 auto quick atime bigtime shutdown
+1200 auto quick swapext quota
+1201 auto quick swapext quota
+1202 auto quick swapext
 1300 auto rw overlay rename
