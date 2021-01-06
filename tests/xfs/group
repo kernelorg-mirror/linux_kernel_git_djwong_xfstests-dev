@@ -506,6 +506,8 @@
 761 auto quick realtime
 763 auto quick rw realtime
 765 auto quick quota
+768 auto quick repair
+770 auto repair
 915 auto quick quota
 917 auto quick db
 918 auto quick db
