@@ -628,3 +628,5 @@
 623 auto quick shutdown
 624 auto quick verity
 625 auto quick verity
+947 auto quick rw clone
+948 auto quick rw copy_range
