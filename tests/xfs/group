@@ -515,6 +515,7 @@
 536 auto quick reflink
 537 auto quick
 538 auto stress
+757 auto quick attr repair
 759 auto quick rw realtime
 760 auto quick rw realtime collapse insert unshare zero prealloc
 764 auto quick repair
