@@ -524,6 +524,7 @@
 525 auto quick mkfs
 526 auto quick mkfs
 527 auto quick quota
+741 auto quick rw
 747 auto quick scrub
 757 auto quick attr repair
 758 auto quick rw attr realtime
