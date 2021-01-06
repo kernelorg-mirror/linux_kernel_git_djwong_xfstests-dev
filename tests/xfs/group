@@ -545,6 +545,7 @@
 909 auto quick bigtime quota
 910 auto quick inobtcount
 911 auto quick bigtime
+1202 auto quick swapext
 1500 dangerous_fuzzers dangerous_bothrepair
 1501 dangerous_fuzzers dangerous_bothrepair
 1502 dangerous_fuzzers dangerous_bothrepair
