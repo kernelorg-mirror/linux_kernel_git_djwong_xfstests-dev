@@ -521,6 +521,7 @@
 763 auto quick rw realtime
 764 auto quick repair
 765 auto quick quota
+767 auto quick quota realtime
 768 auto quick repair
 770 auto repair
 908 auto quick bigtime
