@@ -531,6 +531,7 @@
 760 auto quick rw realtime collapse insert unshare zero prealloc
 762 auto quick rw scrub realtime
 764 auto quick repair
+767 auto quick quota realtime
 768 auto quick repair
 770 auto repair
 773 auto quick repair
