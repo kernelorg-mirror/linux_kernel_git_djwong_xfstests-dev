@@ -43,6 +43,9 @@ for SUNIT_K in 8 16 32 64 128; do
 	_scratch_mkfs_geom $SUNIT_BYTES 4 $BLOCKSIZE >> $seqres.full 2>&1
 	_scratch_mount
 
+	# Make sure everything is on the data device
+	$XFS_IO_PROG -c 'chattr -t' $SCRATCH_MNT
+
 	for SIZE_MULT in 1 2 8 64 256; do
 		let SIZE=$SIZE_MULT*$SUNIT_BYTES
 
