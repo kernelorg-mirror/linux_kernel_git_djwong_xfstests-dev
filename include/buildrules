@@ -14,7 +14,7 @@ depend: $(addsuffix -depend,$(SUBDIRS))
 
 clean clobber : $(addsuffix -clean,$(SUBDIRS))
 	$(Q)rm -f $(DIRT)
-	$(Q)rm -fr .libs .ltdep .dep
+	$(Q)rm -fr .libs .ltdep .dep .groupdep
 
 %-clean:
 	@echo "Cleaning $*"
@@ -132,3 +132,11 @@ FILTER = $(basename $(EXTFILTER4) $(BASIC_OUTFILES))
 # finally, select the test files by filtering against against the
 # stripped output files and sort them to remove duplicates.
 TESTS = $(sort $(filter $(ALLFILES), $(FILTER)))
+
+.groupdep:
+	@echo "   [DEP]"
+	$(Q)$(TOPDIR)/tools/mkgroupdep $@
+
+group:
+	@echo " [GROUP] $$PWD/$@"
+	$(Q)$(TOPDIR)/tools/mkgroupfile $@

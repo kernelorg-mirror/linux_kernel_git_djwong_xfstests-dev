@@ -7,6 +7,11 @@ include $(TOPDIR)/include/builddefs
 
 EXT4_DIR = ext4
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(EXT4_DIR)
+DIRT = group
+
+default: $(DIRT)
+
+depend: .groupdep
 
 include $(BUILDRULES)
 
@@ -18,3 +23,5 @@ install:
 
 # Nothing.
 install-dev install-lib:
+
+-include .groupdep
