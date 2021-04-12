@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Generate a .dep file for a group file
+
+if [ "$1" = "--help" ]; then
+	echo "Usage: (cd tests/XXX/ ; ../../tools/mkgroupdep [output])"
+	exit 1
+fi
+
+test_dir="$PWD"
+depfile="$1"
+
+generate_depfile() {
+	cat << ENDL
+# QA groups control dependency file, automatically generated.
+# See _set_seq_and_groups in each test for details.
+
+ENDL
+	echo -n 'group: '
+	grep -R -l '^_set_test' | sort -g | tr '\n' ' '
+}
+
+if [ -z "$depfile" ] || [ "$depfile" = "-" ]; then
+	# Dump the dep file to stdout and exit
+	generate_depfile
+	exit 0
+fi
+
+# Otherwise, write the dep file to disk somewhere.
+ndepfile="${depfile}.new"
+rm -f "$ndepfile"
+generate_depfile >> "$ndepfile"
+mv "$ndepfile" "$depfile"
