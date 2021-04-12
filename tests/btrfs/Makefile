@@ -7,6 +7,11 @@ include $(TOPDIR)/include/builddefs
 
 BTRFS_DIR = btrfs
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(BTRFS_DIR)
+DIRT = group
+
+default: $(DIRT)
+
+depend: .groupdep
 
 include $(BUILDRULES)
 
@@ -18,3 +23,5 @@ install:
 
 # Nothing.
 install-dev install-lib:
+
+-include .groupdep
