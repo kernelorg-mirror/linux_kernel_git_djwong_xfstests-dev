@@ -11,7 +11,12 @@ _require_populate_commands() {
 	_require_xfs_io_command "falloc"
 	_require_xfs_io_command "fpunch"
 	_require_test_program "punch-alternating"
-	_require_command "$XFS_DB_PROG" "xfs_db"
+	case "${FSTYP}" in
+	"xfs")
+		_require_command "$XFS_DB_PROG" "xfs_db"
+		_require_command "$WIPEFS_PROG" "wipefs"
+		;;
+	esac
 }
 
 _require_xfs_db_blocktrash_z_command() {
@@ -863,6 +868,10 @@ _scratch_populate_restore_cached() {
 
 	case "${FSTYP}" in
 	"xfs")
+		# cached images should have been unmounted cleanly, so wipe the
+		# external log, which we didn't save
+		test -n "${SCRATCH_LOGDEV}" && \
+				$WIPEFS_PROG -a "${SCRATCH_LOGDEV}"
 		xfs_mdrestore "${metadump}" "${SCRATCH_DEV}" && return 0
 		;;
 	"ext2"|"ext3"|"ext4")
