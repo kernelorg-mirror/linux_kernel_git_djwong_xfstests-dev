@@ -4,9 +4,13 @@
 
 TOPDIR = ../..
 include $(TOPDIR)/include/builddefs
+include $(TOPDIR)/include/buildgrouplist
 
 UDF_DIR = udf
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(UDF_DIR)
+DIRT = group.list
+
+default: $(DIRT)
 
 include $(BUILDRULES)
 

@@ -4,9 +4,13 @@
 
 TOPDIR = ../..
 include $(TOPDIR)/include/builddefs
+include $(TOPDIR)/include/buildgrouplist
 
 BTRFS_DIR = btrfs
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(BTRFS_DIR)
+DIRT = group.list
+
+default: $(DIRT)
 
 include $(BUILDRULES)
 

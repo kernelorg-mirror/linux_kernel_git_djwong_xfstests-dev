@@ -4,9 +4,13 @@
 
 TOPDIR = ../..
 include $(TOPDIR)/include/builddefs
+include $(TOPDIR)/include/buildgrouplist
 
 PERF_DIR = perf
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(PERF_DIR)
+DIRT = group.list
+
+default: $(DIRT)
 
 include $(BUILDRULES)
 

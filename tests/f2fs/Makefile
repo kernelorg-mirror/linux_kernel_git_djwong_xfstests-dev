@@ -5,9 +5,13 @@
 
 TOPDIR = ../..
 include $(TOPDIR)/include/builddefs
+include $(TOPDIR)/include/buildgrouplist
 
 F2FS_DIR = f2fs
 TARGET_DIR = $(PKG_LIB_DIR)/$(TESTS_DIR)/$(F2FS_DIR)
+DIRT = group.list
+
+default: $(DIRT)
 
 include $(BUILDRULES)
 
