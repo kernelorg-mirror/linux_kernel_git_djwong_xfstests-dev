@@ -9,15 +9,10 @@
 # and remount overlay. This may lead to whiteouts exposure and
 # rmdir failure.
 #
-seq=`basename $0`
-seqres=$RESULT_DIR/$seq
-echo "QA output created by $seq"
+. ./common/preamble
+_begin_fstest auto quick whiteout
 
-here=`pwd`
-tmp=/tmp/$$
-status=1	# failure is the default!
-trap "_cleanup; exit \$status" 0 1 2 3 15
-
+# Override the default cleanup function.
 _cleanup()
 {
 	cd /
@@ -43,11 +38,8 @@ create_whiteout()
 	$UMOUNT_PROG $SCRATCH_MNT
 }
 
-# get standard environment, filters and checks
-. ./common/rc
+# Import common functions.
 . ./common/filter
-
-rm -f $seqres.full
 
 # real QA test starts here
 _supported_fs overlay
