@@ -1,0 +1,49 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2021 Oracle.  All Rights Reserved.
+
+# Boilerplate fstests functionality
+
+# Standard cleanup function.  Individual tests should override this.
+_cleanup()
+{
+	cd /
+	rm -r -f $tmp.*
+}
+
+# Install the supplied cleanup code as a signal handler for HUP, INT, QUIT,
+# TERM, or when the test exits.  Extra signals can be specified as subsequent
+# parameters.
+_register_cleanup()
+{
+	local cleanup="$1"
+	shift
+
+	test -n "$cleanup" && cleanup="${cleanup}; "
+	trap "${cleanup}exit \$status" EXIT HUP INT QUIT TERM $*
+}
+# Initialize the global seq, seqres, here, tmp, and status variables to their
+# defaults.  Group memberships are the only arguments to this helper.
+_begin_fstest()
+{
+	if [ -n "$seq" ]; then
+		echo "_begin_fstest can only be called once!"
+		exit 1
+	fi
+
+	seq=`basename $0`
+	seqres=$RESULT_DIR/$seq
+	echo "QA output created by $seq"
+
+	here=`pwd`
+	tmp=/tmp/$$
+	status=1	# failure is the default!
+
+	_register_cleanup _cleanup
+
+	. ./common/rc
+
+	# remove previous $seqres.full before test
+	rm -f $seqres.full
+
+}
