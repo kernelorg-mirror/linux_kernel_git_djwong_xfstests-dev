@@ -96,9 +96,9 @@ then
 
     while true
     do
-	echo -n "Add to group(s) [other] (separate by space, ? for list): "
+	echo -n "Add to group(s) [auto] (separate by space, ? for list): "
 	read ans
-	[ -z "$ans" ] && ans=other
+	[ -z "$ans" ] && ans=auto
 	if [ "X$ans" = "X?" ]
 	then
 	    echo $(group_names)
@@ -108,6 +108,9 @@ then
 	    if [ "$inval" != "" ]; then
 		echo "Invalid characters in group(s): $inval"
 		echo "Only lower cases, digits and underscore are allowed in groups, separated by space"
+		continue
+	    elif echo "$ans" | grep -q -w "other"; then
+		echo "Do not add more tests to group \"other\"."
 		continue
 	    else
 		# remove redundant spaces/tabs
