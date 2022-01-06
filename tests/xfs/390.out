@@ -2,4 +2,5 @@ QA output created by 390
 Format and populate
 Find leaf1-format dir block
 Fuzz leaf1-format dir block
+lhdr.info.hdr.back = firstbit: online post-mod scrub failed (4).
 Done fuzzing leaf1-format dir block
