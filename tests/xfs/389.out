@@ -2,4 +2,32 @@ QA output created by 389
 Format and populate
 Find data-format dir block
 Fuzz data-format dir block
+du[2].inumber = add: online repair failed (5).
+du[2].inumber = add: online re-scrub failed (5).
+du[2].inumber = add: offline re-scrub failed (1).
+du[2].inumber = add: online post-mod scrub failed (1).
+du[2].inumber = add: offline post-mod scrub failed (1).
+du[3].name = lastbit: online re-scrub failed (5).
+du[3].name = lastbit: offline re-scrub failed (1).
+du[3].name = lastbit: online post-mod scrub failed (1).
+du[3].name = lastbit: offline post-mod scrub failed (1).
+du[5].inumber = add: online repair failed (5).
+du[5].inumber = add: online re-scrub failed (5).
+du[5].inumber = add: offline re-scrub failed (1).
+du[5].inumber = add: online post-mod scrub failed (1).
+du[5].inumber = add: offline post-mod scrub failed (1).
+du[7].inumber = add: online repair failed (5).
+du[7].inumber = add: online re-scrub failed (5).
+du[7].inumber = add: offline re-scrub failed (1).
+du[7].inumber = add: online post-mod scrub failed (1).
+du[7].inumber = add: offline post-mod scrub failed (1).
+du[8].inumber = add: online repair failed (5).
+du[8].inumber = add: online re-scrub failed (5).
+du[8].inumber = add: offline re-scrub failed (1).
+du[8].inumber = add: online post-mod scrub failed (1).
+du[8].inumber = add: offline post-mod scrub failed (1).
+du[9].name = lastbit: online re-scrub failed (5).
+du[9].name = lastbit: offline re-scrub failed (1).
+du[9].name = lastbit: online post-mod scrub failed (1).
+du[9].name = lastbit: offline post-mod scrub failed (1).
 Done fuzzing data-format dir block
