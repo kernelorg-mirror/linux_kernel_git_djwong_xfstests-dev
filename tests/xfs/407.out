@@ -1,4 +1,22 @@
 QA output created by 407
 Format and populate
 Fuzz rtrmapbt recs
+recs[1].extentflag = ones: online scrub didn't fail.
+recs[1].extentflag = ones: offline re-scrub failed (1).
+recs[1].extentflag = ones: offline post-mod scrub failed (1).
+recs[1].extentflag = firstbit: online scrub didn't fail.
+recs[1].extentflag = firstbit: offline re-scrub failed (1).
+recs[1].extentflag = firstbit: offline post-mod scrub failed (1).
+recs[1].extentflag = middlebit: online scrub didn't fail.
+recs[1].extentflag = middlebit: offline re-scrub failed (1).
+recs[1].extentflag = middlebit: offline post-mod scrub failed (1).
+recs[1].extentflag = lastbit: online scrub didn't fail.
+recs[1].extentflag = lastbit: offline re-scrub failed (1).
+recs[1].extentflag = lastbit: offline post-mod scrub failed (1).
+recs[1].extentflag = add: online scrub didn't fail.
+recs[1].extentflag = add: offline re-scrub failed (1).
+recs[1].extentflag = add: offline post-mod scrub failed (1).
+recs[1].extentflag = sub: online scrub didn't fail.
+recs[1].extentflag = sub: offline re-scrub failed (1).
+recs[1].extentflag = sub: offline post-mod scrub failed (1).
 Done fuzzing rtrmapbt recs
