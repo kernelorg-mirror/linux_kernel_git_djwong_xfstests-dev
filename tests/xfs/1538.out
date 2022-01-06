@@ -1,4 +1,5 @@
 QA output created by 1538
 Format and populate
 Fuzz rtrefcountbt recs
+numrecs = lastbit: online scrub didn't fail.
 Done fuzzing rtrefcountbt recs
