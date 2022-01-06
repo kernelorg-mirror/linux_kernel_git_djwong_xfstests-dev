@@ -171,6 +171,7 @@ tags
 /src/unwritten_sync
 /src/uring_read_fault
 /src/usemem
+/src/usemem_and_swapoff
 /src/writemod
 /src/writev_on_pagefault
 /src/xfsctl
