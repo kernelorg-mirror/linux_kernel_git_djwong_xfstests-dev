@@ -20,6 +20,7 @@ _begin_fstest auto quick prealloc
 _supported_fs xfs
 _require_test
 _require_scratch
+_require_xfs_io_command allocsp
 
 size_mb=32
 # Write a known pattern to the disk so that we can detect stale disk blocks
