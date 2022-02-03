@@ -828,6 +828,7 @@ _scratch_xfs_stress_scrub() {
 # and wait for 30x seconds to see if the filesystem goes down.  Same arguments
 # as _scratch_xfs_stress_scrub.
 _scratch_xfs_stress_online_repair() {
+	touch "$RESULT_DIR/.skip_orebuild"	# no need to test online rebuild
 	$XFS_IO_PROG -x -c 'inject force_repair' $SCRATCH_MNT
 	XFS_SCRUB_FORCE_REPAIR=1 _scratch_xfs_stress_scrub "$@"
 }
