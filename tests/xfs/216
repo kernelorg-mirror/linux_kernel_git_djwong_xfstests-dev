@@ -43,6 +43,18 @@ _do_mkfs()
 # make large holey file
 $XFS_IO_PROG -f -c "truncate 256g" $LOOP_DEV
 
+# link correct .out file, since default log sizes changed when bigtime was
+# turned on by default
+$MKFS_XFS_PROG -N -f -b size=4096 -l version=2 \
+	-d name=$LOOP_DEV $loop_mkfs_opts &> $tmp.mkfs
+seqfull=$0
+rm -f $seqfull.out
+if grep -qw 'bigtime=1' $tmp.mkfs; then
+	ln -s $seq.out.bigtime $seqfull.out
+else
+	ln -s $seq.out.old $seqfull.out
+fi
+
 #make loopback mount dir
 mkdir $LOOP_MNT
 
