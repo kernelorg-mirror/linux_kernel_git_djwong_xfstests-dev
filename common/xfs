@@ -1468,11 +1468,15 @@ _scratch_get_sfdir_prefix() {
 
 _scratch_get_bmx_prefix() {
 	local ino="$1"
+	local mo=
 
 	for prefix in "u3.bmx" "u.bmx"; do
-		if [ -n "$(_scratch_xfs_get_metadata_field \
+		echo "try prefix ${prefix}" >> $seqres.full
+		mo="$(_scratch_xfs_get_metadata_field \
 				"${prefix}[0].startblock" \
-				"inode ${ino}")" ]; then
+				"inode ${ino}" 2>> $seqres.full)"
+		echo "${mo}" >> $seqres.full
+		if [ -n "${mo}" ]; then
 			echo "${prefix}"
 			return 0
 		fi
