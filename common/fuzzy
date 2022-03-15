@@ -45,7 +45,7 @@ _require_scrub() {
 _scratch_scrub() {
 	case "${FSTYP}" in
 	"xfs")
-		$XFS_SCRUB_PROG -d -T -v "$@" $SCRATCH_MNT
+		$XFS_SCRUB_PROG -d -T -v -b "$@" $SCRATCH_MNT
 		;;
 	*)
 		_fail "No online scrub program for ${FSTYP}."
