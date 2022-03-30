@@ -26,11 +26,31 @@ _require_xfs_quota
 _qmount_option "defaults"
 
 _scratch_mkfs >/dev/null 2>&1
+
+echo mount with uquota >> /dev/ttyprintk
 _scratch_mount "-o uquota"
 _scratch_unmount
-_scratch_xfs_db -r -c sb -c print  | grep qflags
+$UDEV_SETTLE_PROG >/dev/null 2>&1
+echo unmount with uquota >> /dev/ttyprintk
+
+#_scratch_xfs_db -r -c sb -c print  | grep qflags
+_scratch_xfs_db -r -c sb -c print &> /tmp/farts
+if grep 'qflags = 0$' /tmp/farts; then
+	cat /tmp/farts
+	for ((i = 0; i < 30; i++)); do
+		_scratch_xfs_db -r -c sb -c print | grep -E '(crc|lsn|qflags)'
+		sleep 1
+	done
+	echo BAH
+else
+	grep qflags /tmp/farts
+fi
+
+echo mount with noquota >> /dev/ttyprintk
 _scratch_mount
 _scratch_unmount
+echo unmount with noquota >> /dev/ttyprintk
+
 _scratch_xfs_db -r -c sb -c print  | grep qflags
 
 # success, all done
