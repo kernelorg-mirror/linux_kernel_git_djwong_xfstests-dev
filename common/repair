@@ -29,6 +29,7 @@ _filter_repair()
 # for sb
 /- agno = / && next;	# remove each AG line (variable number)
 s/(pointer to) (\d+)/\1 INO/;
+s/Superblock has bad magic number.*/bad magic number/;
 # Changed inode output in 5.5.0
 s/sb root inode value /sb root inode /;
 s/realtime bitmap inode value /realtime bitmap inode /;
