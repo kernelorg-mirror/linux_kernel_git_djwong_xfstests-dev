@@ -20,8 +20,8 @@ _filter_blocks()
 /^ +[0-9]/ {
 	if (!written_size) {
 		written_size = $6
-		unwritten1 = ((1048576/512) / 2) - written_size
-		unwritten2 = ((1048576/512) / 2) - 2 * written_size
+		unwritten1 = ((2097152/512) / 2) - written_size
+		unwritten2 = ((2097152/512) / 2) - 2 * written_size
 	}
 
 	# is the extent unwritten?
@@ -58,7 +58,14 @@ _scratch_mount
 
 TEST_FILE=$SCRATCH_MNT/test_file
 TEST_PROG=$here/src/unwritten_mmap
-FILE_SIZE=1048576
+
+# Beginning with 5.18, some filesystems support creating large folios for the
+# page cache.  A system with 64k pages can create 256k folios, which means
+# that with the old file size of 1M, the last half of the file is completely
+# converted from unwritten to written by page_mkwrite.  The test will fail on
+# the golden output when this happens, so double the size to prevent this from
+# happening.
+FILE_SIZE=2097152
 
 rm -f $TEST_FILE
 $TEST_PROG $FILE_SIZE $TEST_FILE
