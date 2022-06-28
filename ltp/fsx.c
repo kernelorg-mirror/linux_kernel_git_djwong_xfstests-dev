@@ -672,7 +672,7 @@ check_buffers(char *buf, unsigned offset, unsigned size)
 			c = good_buf[offset];
 			t = buf[i];
 			if (c != t) {
-			        if (n < 16) {
+			        if (n < 16 || !(offset & 4095)) {
 					bad = short_at(&buf[i]);
 				        prt("0x%05x\t0x%04x\t0x%04x", offset,
 				            short_at(&good_buf[offset]), bad);
