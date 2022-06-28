@@ -4557,7 +4557,12 @@ run_fsx()
 	rm -f $TEST_DIR/junk
 	"$@" 2>&1 | tee -a $seqres.full >$tmp.fsx
 	if [ ${PIPESTATUS[0]} -ne 0 ]; then
-		cat $tmp.fsx
+		echo FSX FAILURE ${PIPESTATUS[0]} >> /dev/ttyprintk
+		$XFS_IO_PROG -c "scrub probe" $TEST_DIR/junk
+		stat -c 'junk file %i' $TEST_DIR/junk >> $seqres.full
+		diff -Naurp <(od -tx1 -Ax -c $TEST_DIR/junk.fsxgood) <(od -tx1 -Ax -c $TEST_DIR/junk) | grep '^[+-]0..000' >> $seqres.full
+		head -n 50 $tmp.fsx
+		tail -n 50 $tmp.fsx
 		rm -f $tmp.fsx
 		exit 1
 	fi
