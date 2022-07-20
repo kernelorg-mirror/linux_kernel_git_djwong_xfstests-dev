@@ -4767,14 +4767,19 @@ _dmsetup_remove()
 
 _dmsetup_create()
 {
+	echo "settle0" >> $seqres.full
 	# Wait for udev to settle so that the dm creation doesn't fail because
 	# some udev subprogram opened one of the block devices mentioned in the
 	# table string w/ O_EXCL.  Do it again at the end so that an immediate
 	# device open won't also fail.
 	$UDEV_SETTLE_PROG >/dev/null 2>&1
+	echo "create $@" >> $seqres.full
 	$DMSETUP_PROG create "$@" >>$seqres.full 2>&1 || return 1
+	echo "mknodes" >> $seqres.full
 	$DMSETUP_PROG mknodes >/dev/null 2>&1
+	echo "settle1" >> $seqres.full
 	$UDEV_SETTLE_PROG >/dev/null 2>&1
+	echo "done creating" >> $seqres.full
 }
 
 _require_btime()
