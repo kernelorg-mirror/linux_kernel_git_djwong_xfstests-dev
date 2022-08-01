@@ -154,3 +154,23 @@ _require_scratch_richacl_ext4()
 		|| _notrun "kernel doesn't support richacl feature on $FSTYP"
 	_scratch_unmount
 }
+
+_scratch_ext4_options()
+{
+    local type=$1
+    local log_opt=""
+
+    case $type in
+    mkfs)
+        log_opt="-J device=$SCRATCH_LOGDEV"
+	;;
+    mount)
+	# As of kernel 5.19, the kernel mount option path parser only accepts
+	# direct paths to block devices--the final path component cannot be a
+	# symlink.
+        log_opt="-o journal_path=$(realpath $SCRATCH_LOGDEV)"
+	;;
+    esac
+    [ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ] && \
+	SCRATCH_OPTIONS="$SCRATCH_OPTIONS ${log_opt}"
+}
