@@ -682,7 +682,8 @@ _xfs_metadump() {
 _xfs_mdrestore() {
 	local metadump="$1"
 	local device="$2"
-	shift; shift
+	local logdev="$3"
+	shift; shift; shift
 	local options="$@"
 
 	# If we're configured for compressed dumps and there isn't already an
@@ -696,6 +697,18 @@ _xfs_mdrestore() {
 	test -r "$metadump" || return 1
 
 	$XFS_MDRESTORE_PROG $options "${metadump}" "${device}"
+	res=$?
+	test $res -ne 0 && return $res
+
+	# Cached images should have been unmounted cleanly, so if there's an
+	# external log we need to wipe it and run repair to format it to match
+	# this filesystem.
+	if [ "${logdev}" != "none" ]; then
+		$WIPEFS_PROG -a "${logdev}"
+		_scratch_xfs_repair
+		res=$?
+	fi
+	return $res
 }
 
 # Snapshot the metadata on the scratch device
@@ -717,7 +730,11 @@ _scratch_xfs_mdrestore()
 	local metadump=$1
 	shift
 
-	_xfs_mdrestore "$metadump" "$SCRATCH_DEV" "$@"
+	local logdev=none
+	[ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ] && \
+		logdev=$SCRATCH_LOGDEV
+
+	_xfs_mdrestore "$metadump" "$SCRATCH_DEV" "$logdev" "$@"
 }
 
 # run xfs_check and friends on a FS.
