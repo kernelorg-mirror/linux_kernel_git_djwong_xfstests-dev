@@ -299,7 +299,12 @@ __scratch_xfs_fuzz_mdrestore()
 	test -e "${POPULATE_METADUMP}" || _fail "Need to set POPULATE_METADUMP"
 
 	__scratch_xfs_fuzz_unmount
-	_xfs_mdrestore "${POPULATE_METADUMP}" "${SCRATCH_DEV}"
+
+	local logdev=none
+	[ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ] && \
+		logdev=$SCRATCH_LOGDEV
+
+	_xfs_mdrestore "${POPULATE_METADUMP}" "${SCRATCH_DEV}" "${logdev}"
 }
 
 __fuzz_notify() {
