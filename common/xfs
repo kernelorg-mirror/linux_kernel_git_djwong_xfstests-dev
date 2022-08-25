@@ -658,9 +658,20 @@ _xfs_metadump() {
 	shift; shift; shift; shift
 	local options="$@"
 	test -z "$options" && options="-a -o"
+	local metadump_has_dash_x
+
+	# Does metadump support capturing from external devices?
+	$XFS_METADUMP_PROG --help 2>&1 | grep -q -- '-[a-zA-Z]*[wW]x' && \
+			metadump_has_dash_x=1
 
 	if [ "$logdev" != "none" ]; then
 		options="$options -l $logdev"
+
+		# Tell metadump to capture the log device
+		if [ -n "$metadump_has_dash_x" ]; then
+			options="$options -x"
+			unset metadump_has_dash_x
+		fi
 	fi
 
 	$XFS_METADUMP_PROG $options "$device" "$metadump"
@@ -687,6 +698,13 @@ _xfs_mdrestore() {
 		done
 	fi
 	test -r "$metadump" || return 1
+
+	# Does mdrestore support restoring to external log devices?  If so,
+	# restore to it, and do not wipe it afterwards.
+	if [ "$logdev" != "none" ] && $XFS_MDRESTORE_PROG --help 2>&1 | grep -q -- '-l logdev'; then
+		options="$options -l $logdev"
+		logdev="none"
+	fi
 
 	$XFS_MDRESTORE_PROG $options "${metadump}" "${device}"
 	res=$?
