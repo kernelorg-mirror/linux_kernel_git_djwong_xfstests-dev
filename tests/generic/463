@@ -28,6 +28,13 @@ _require_test_reflink
 _require_aiodio aio-dio-cow-race
 
 $AIO_TEST $TEST_DIR/file $TEST_DIR/clone
+res=$?
+
+if [ $res -ne 0 ]; then
+	echo "res $res" >> $seqres.full
+	xfs_info $TEST_DIR &>> $seqres.full
+	stat $TEST_DIR/file $TEST_DIR/clone >> $seqres.full
+fi
 
 echo "Silence is golden"
 status=0
