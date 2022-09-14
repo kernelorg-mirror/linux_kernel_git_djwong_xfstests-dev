@@ -139,6 +139,9 @@ $here/src/punch-alternating $SCRATCH_MNT/bigfile -o $((punch_off / rtextsize_byt
 free_rtx=$($XFS_IO_PROG -c 'statfs' $SCRATCH_MNT | grep statfs.f_bavail | awk '{print $3}')
 if [ $free_rtx -eq 0 ]; then
 	echo "Expected fragmented free rt space, found none."
+	xfs_info $SCRATCH_MNT >> $seqres.full
+	$XFS_IO_PROG -c 'statfs' $SCRATCH_MNT >> $seqres.full
+	filefrag -v $SCRATCH_MNT/bigfile >> $seqres.full
 fi
 
 # Try to double the amount of blocks in the victim file.  On a buggy kernel,
