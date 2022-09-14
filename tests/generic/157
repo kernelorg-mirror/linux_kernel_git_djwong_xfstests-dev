@@ -96,8 +96,18 @@ echo "Try to reflink an append-only file"
 _reflink_range $testdir1/file1 0 $testdir1/file3 0 $blksz -a 2>&1 | _filter_einval
 
 echo "Reflink two files"
+echo "reflink two files " >> $seqres.full
+stat $testdir1/file1 $testdir1/file2 $testdir2/file1 $testdir2/file2 >> $seqres.full
+xfs_info $TEST_DIR &>> $seqres.full
+xfs_info $SCRATCH_MNT &>> $seqres.full
 _reflink_range $testdir1/file1 0 $testdir1/file2 0 $blksz >> $seqres.full
 _reflink_range $testdir2/file1 0 $testdir2/file2 0 $blksz >> $seqres.full
+
+echo result >> $seqres.full
+echo _reflink_range $testdir1/file1 0 $testdir1/file2 0 $blksz &>> $seqres.full
+echo _reflink_range $testdir2/file1 0 $testdir2/file2 0 $blksz &>> $seqres.full
+_reflink_range $testdir1/file1 0 $testdir1/file2 0 $blksz &>> $seqres.full
+_reflink_range $testdir2/file1 0 $testdir2/file2 0 $blksz &>> $seqres.full
 
 # success, all done
 status=0
