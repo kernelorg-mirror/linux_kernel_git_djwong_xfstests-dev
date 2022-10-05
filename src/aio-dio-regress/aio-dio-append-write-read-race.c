@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
 	rdata.buf = rbuf;
 
 	for (i = 0; i < max_blocks; i++) {
+		int corrupt = 0;
+
 		wdata.offset = rdata.offset = i * blksize;
 
 		/* reset reader_ready, it will be set in reader thread */
@@ -192,12 +194,16 @@ int main(int argc, char *argv[])
 
 		for (j = 0; j < rdata.read_sz; j++) {
 			if (rdata.buf[j] != 'a') {
-				fail("encounter an error: "
+				fprintf(stderr, "encounter an error: "
 					"block %d offset %d, content %x\n",
 					i, j, rbuf[j]);
-				ret = 1;
-				goto err;
+				corrupt = 1;
 			}
+		}
+
+		if (corrupt) {
+			ret = 1;
+			goto err;
 		}
 	}
 
