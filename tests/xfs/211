@@ -58,11 +58,23 @@ echo "CoW and unmount"
 $XFS_IO_PROG -f -c "cowextsize" $testdir/file2 >> $seqres.full
 $XFS_IO_PROG -d -f -c "pwrite -R -S 0x63 -b $real_blksz 0 $((filesize + 1))" $testdir/file2 >> $seqres.full
 $XFS_IO_PROG -d -f -c "pwrite -S 0x63 -b 8388608 0 $filesize" $testdir/file2 >> $seqres.full
+
+echo "Compare files before unmount"
+md5sum $testdir/file1 | _filter_scratch
+md5sum $testdir/file2 | _filter_scratch
+
 _scratch_cycle_mount
 
 echo "Compare files"
 md5sum $testdir/file1 | _filter_scratch
 md5sum $testdir/file2 | _filter_scratch
+
+echo f1 >> $seqres.full
+od -tx1 -Ad -c $testdir/file1 >> $seqres.full
+echo f2 >> $seqres.full
+od -tx1 -Ad -c $testdir/file2 >> $seqres.full
+$XFS_INFO_PROG $SCRATCH_MNT >> $seqres.full
+$XFS_IO_PROG -c 'statfs' $SCRATCH_MNT >> $seqres.full
 
 echo "Check extent counts"
 old_extents=$(_count_extents $testdir/file1)
