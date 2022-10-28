@@ -64,6 +64,11 @@ echo "Compare files"
 md5sum $testdir/file1 | _filter_scratch
 md5sum $testdir/file2 | _filter_scratch
 
+echo f1 >> $seqres.full
+od -tx1 -Ad -c $testdir/file1 >> $seqres.full
+echo f2 >> $seqres.full
+od -tx1 -Ad -c $testdir/file2 >> $seqres.full
+
 echo "Check extent counts"
 old_extents=$(_count_extents $testdir/file1)
 new_extents=$(_count_extents $testdir/file2)
