@@ -53,4 +53,15 @@ _begin_fstest()
 	# remove previous $seqres.full before test
 	rm -f $seqres.full $seqres.hints
 
+	if [ -n "${ALWAYS_COW}" ]; then
+		local knob="/sys/fs/xfs/debug/always_cow"
+		local cow=$(cat "$knob")
+		if [ "$cow" != 1 ]; then
+			echo "ZOMG $knob is $cow!"
+			local fud="/etc/udev/rules.d/99-djwong-fstester.rules"
+			ls -la "$fud"
+			cat "$fud"
+			_fail "ZOMG $knob is $cow!"
+		fi
+	fi
 }
