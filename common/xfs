@@ -1426,6 +1426,10 @@ _require_xfs_spaceman_command()
 		testio=`$XFS_SPACEMAN_PROG -c "health $param" $TEST_DIR 2>&1`
 		param_checked=1
 		;;
+	"fsuuid")
+		testio=`$XFS_SPACEMAN_PROG -c "$command" $TEST_DIR 2>&1`
+		param_checked=1
+		;;
 	*)
 		testio=`$XFS_SPACEMAN_PROG -c "help $command" $TEST_DIR 2>&1`
 	esac

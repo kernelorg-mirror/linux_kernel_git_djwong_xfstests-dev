@@ -1,0 +1,30 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2022 Oracle.  All Rights Reserved.
+#
+# FS QA Test 849
+#
+# Test to verify xfs_spaceman fsuuid functionality
+#
+. ./common/preamble
+_begin_fstest auto quick spaceman
+
+# real QA test starts here
+_supported_fs xfs
+_require_xfs_spaceman_command "fsuuid"
+_require_scratch
+
+_scratch_mkfs >> $seqres.full
+expected_uuid="$(_scratch_xfs_admin -u)"
+_scratch_mount >> $seqres.full
+actual_uuid="$($XFS_SPACEMAN_PROG -c "fsuuid" $SCRATCH_MNT)"
+
+if [ "$expected_uuid" != "$actual_uuid" ]; then
+        echo "expected UUID ($expected_uuid) != actual UUID ($actual_uuid)"
+fi
+
+echo "Silence is golden"
+
+# success, all done
+status=0
+exit
