@@ -1920,8 +1920,16 @@ _xfs_discard_max_offset_kb()
 	local path="$1"
 	local blksz=$(_xfs_statfs_field "$path" geom.bsize)
 	local dblks=$(_xfs_statfs_field "$path" geom.datablocks)
+	local rblks=$(_xfs_statfs_field "$path" geom.rtblocks)
 
-	echo "$((dblks * blksz / 1024))"
+	# If the kernel supports discarding the realtime volume, then it will
+	# not reject a FITRIM for fsblock dblks+1, even if the len/minlen
+	# arguments are absurd.
+	if [ "$rblks" -gt 0 ] && $FSTRIM_PROG -o $((dblks * blksz)) -l $blksz -m $((blksz * 2)) "$1" &>/dev/null; then
+		echo "$(( (dblks + rblks) * blksz / 1024 ))"
+	else
+		echo "$((dblks * blksz / 1024))"
+	fi
 }
 
 # Find a metadata file within an xfs filesystem.  The sole argument is the
