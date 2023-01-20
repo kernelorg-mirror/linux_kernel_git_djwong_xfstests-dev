@@ -1918,8 +1918,8 @@ _require_xfs_scratch_atomicswap()
 _xfs_discard_max_offset_kb()
 {
 	local path="$1"
-	local blksz="$($XFS_IO_PROG -c 'statfs' "$path" | grep "geom.bsize" | cut -d ' ' -f 3)"
-	local dblks="$($XFS_IO_PROG -c 'statfs' "$path" | grep "geom.datablocks" | cut -d ' ' -f 3)"
+	local blksz=$(_xfs_statfs_field "$path" geom.bsize)
+	local dblks=$(_xfs_statfs_field "$path" geom.datablocks)
 
 	echo "$((dblks * blksz / 1024))"
 }
@@ -2012,4 +2012,10 @@ _require_xfs_scratch_metadir()
 	else
 		_scratch_unmount
 	fi
+}
+
+# Extract a statfs attribute of the given mounted XFS filesystem.
+_xfs_statfs_field()
+{
+	$XFS_IO_PROG -c 'statfs' "$1" | grep -E "$2" | cut -d ' ' -f 3
 }
