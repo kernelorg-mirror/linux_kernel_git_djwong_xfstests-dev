@@ -376,6 +376,7 @@ _scratch_xfs_populate() {
 	is_rt="$(_xfs_get_rtextents "$SCRATCH_MNT")"
 	is_rmapbt="$(_xfs_has_feature "$SCRATCH_MNT" rmapbt -v)"
 	is_reflink="$(_xfs_has_feature "$SCRATCH_MNT" reflink -v)"
+	is_pptr="$(_xfs_has_feature "$SCRATCH_MNT" parent -v)"
 
 	# Reverse-mapping btree
 	if [ $is_rmapbt -gt 0 ]; then
@@ -410,6 +411,14 @@ _scratch_xfs_populate() {
 		nr="$((blksz * 2 / 12))"
 		__populate_create_file $((blksz * nr)) "${SCRATCH_MNT}/REFCOUNTBT"
 		cp --reflink=always "${SCRATCH_MNT}/REFCOUNTBT" "${SCRATCH_MNT}/REFCOUNTBT2"
+	fi
+
+	# Parent pointers
+	if [ $is_pptr -gt 0 ]; then
+		echo "+ parent pointers"
+		__populate_create_dir "${SCRATCH_MNT}/PPTRS" 1 '' --hardlink --format "two_%d"
+		nr="$((blksz * 2 / 16))"
+		__populate_create_dir "${SCRATCH_MNT}/PPTRS" ${nr} '' --hardlink --format "many%04d"
 	fi
 
 	# Copy some real files (xfs tests, I guess...)
