@@ -1308,6 +1308,8 @@ _scratch_xfs_stress_scrub() {
 	local stress_tgt="${XFS_SCRUB_STRESS_TARGET:-default}"
 	local start_agno=0
 
+	touch "$RESULT_DIR/.skip_orebuild"	# no need to test online rebuild
+
 	__SCRUB_STRESS_FREEZE_PID=""
 	__SCRUB_STRESS_REMOUNT_LOOP=""
 	rm -f "$runningfile"
@@ -1423,7 +1425,6 @@ __scratch_xfs_stress_setup_force_rebuild() {
 # and wait for 30*TIME_FACTOR seconds to see if the filesystem goes down.
 # Same requirements and arguments as _scratch_xfs_stress_scrub.
 _scratch_xfs_stress_online_repair() {
-	touch "$RESULT_DIR/.skip_orebuild"	# no need to test online rebuild
 	__scratch_xfs_stress_setup_force_rebuild
 	XFS_SCRUB_FORCE_REPAIR=1 _scratch_xfs_stress_scrub "$@"
 }
