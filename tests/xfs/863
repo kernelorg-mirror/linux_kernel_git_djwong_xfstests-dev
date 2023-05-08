@@ -1,0 +1,133 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2023 Oracle.  All Rights Reserved.
+#
+# FS QA Test 863
+#
+# Check that the online fsck systemd services find and check the test and
+# scratch filesystems, and that we can read what was logged after the fact.
+# IOWs, basic testing for the systemd background services.
+#
+. ./common/preamble
+_begin_fstest auto scrub
+
+_cleanup()
+{
+	cd /
+	if [ -n "$new_svcfile" ]; then
+		rm -f "$new_svcfile"
+		systemctl daemon-reload
+	fi
+	rm -r -f $tmp.*
+}
+
+# Import common functions.
+. ./common/filter
+. ./common/populate
+. ./common/fuzzy
+
+# real QA test starts here
+
+_supported_fs xfs
+_require_systemd_service xfs_scrub@.service
+_require_systemd_service xfs_scrub_all.service
+_require_systemd_running systemd-journald.service
+_require_program systemd-analyze
+_require_program journalctl
+_require_scratch
+_require_scrub
+_require_xfs_io_command "scrub"
+_require_populate_commands
+
+# Back when xfs_scrub was experimental, the systemd service definitions
+# contained number bugs that resulted in weird problems such as logging
+# messages sometimes dropping slashes from paths, and the xfs_scrub@ service
+# being logged as completing long after the service actually stopped.  These
+# problems were all fixed by the time the --auto-media-scan-stamp option was
+# added to xfs_scrub_all, so turn off this test for such old codebases.
+scruball_exe="$(systemctl cat xfs_scrub_all | grep '^ExecStart=' | sed -e 's/ExecStart=//g' -e 's/ .*$//g')"
+grep -q -- '--auto-media-scan-stamp' "$scruball_exe" || \
+	_notrun "xfs_scrub service too old, skipping test"
+
+orig_svcfile="/lib/systemd/system/xfs_scrub_all.service"
+test -f "$orig_svcfile" || \
+	_notrun "cannot find xfs_scrub_all service file"
+
+new_svcdir="/run/systemd/system/"
+test -d "$new_svcdir" || \
+	_notrun "cannot find runtime systemd service dir"
+
+# We need to make some local mods to the xfs_scrub_all service definition
+# so we fork it and create a new service just for this test.
+new_scruball_svc="xfs_scrub_all_fstest.service"
+systemctl status "$new_scruball_svc" &>/dev/null
+test $? -ne 4 && \
+	_notrun "systemd service \"$new_scruball_svc\" found, will not mess with this"
+
+# Spit out the current time in a format that journalctl will understand.
+systemd_now() {
+	systemd-analyze timestamp now | \
+		grep 'Normalized form:' | \
+		sed -e 's/Normalized form: //g'
+}
+
+# Try to find the Starting -> Finished (or Failed) log messages that denote
+# a successful service activation.
+find_service_trace() {
+	local svc="$1"
+	local grep_pattern="$2"
+	local since="$3"
+
+	echo "log for \"$svc\" pattern \"$grep_pattern\"" >> $seqres.full
+	journalctl -u "$svc" --since "$since" >> $seqres.full
+
+	mentions=$(journalctl -u "$svc" --since "$since" | \
+		grep -E -c "(Starting|Failed|Finished).*${grep_pattern}")
+	test $mentions -ge 2 || \
+		echo "log for \"$svc\" pattern \"$grep_pattern\" not found"
+}
+
+echo "Format and populate"
+_scratch_populate_cached nofill > $seqres.full 2>&1
+_scratch_mount
+
+echo "Scrub Test FS"
+test_path=$(systemd-escape --path "$TEST_DIR")
+since=$(systemd_now)
+systemctl start --wait xfs_scrub@$test_path
+find_service_trace "xfs_scrub@$test_path" "Check for $TEST_DIR" "$since"
+
+echo "Scrub Scratch FS"
+scratch_path=$(systemd-escape --path "$SCRATCH_MNT")
+since=$(systemd_now)
+systemctl start --wait xfs_scrub@$scratch_path
+find_service_trace "xfs_scrub@$scratch_path" "Check for $SCRATCH_MNT" "$since"
+
+# Remove the xfs_scrub_all media scan stamp directory (if specified) because we
+# want to leave the regular system's stamp file alone.
+mkdir -p $tmp/stamp
+
+new_svcfile="$new_svcdir/$new_scruball_svc"
+cp "$orig_svcfile" "$new_svcfile"
+
+execstart="$(grep '^ExecStart=' $new_svcfile | sed -e 's/--auto-media-scan-interval[[:space:]]*[0-9]*[a-z]*//g')"
+sed -e '/ExecStart=/d' -e '/BindPaths=/d' -i $new_svcfile
+cat >> "$new_svcfile" << ENDL
+[Service]
+$execstart
+ENDL
+systemctl daemon-reload
+
+# Emit the results of our editing to the full log.
+systemctl cat "$new_scruball_svc" >> $seqres.full
+
+echo "Scrub Everything"
+since=$(systemd_now)
+systemctl start --wait "$new_scruball_svc"
+find_service_trace "xfs_scrub@$test_path" "Check for $TEST_DIR" "$since"
+find_service_trace "xfs_scrub@$scratch_path" "Check for $SCRATCH_MNT" "$since"
+find_service_trace "$new_scruball_svc" "All Filesystems" "$since"
+
+# success, all done
+status=0
+exit
