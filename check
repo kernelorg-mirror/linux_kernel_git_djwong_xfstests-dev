@@ -447,6 +447,52 @@ _global_log() {
 	fi
 }
 
+# Find the topmost directories of the .gcno directory hierarchy
+_gcov_find_topdirs() {
+	find /sys/kernel/debug/gcov/ -name '*.gcno' -printf '%d|%h\n' | \
+		sort -g -k 1 | \
+		uniq | \
+		$AWK_PROG -F '|' 'BEGIN { x = -1 } { if (x < 0) x = $1; if ($1 == x) printf("%s\n", $2);}'
+}
+
+# Generate lcov html report from kernel gcov data if configured
+_gcov_generate_report() {
+	local output_dir="$1"
+	test -n "${output_dir}" || return
+	test "$output_dir" = "1" && output_dir="$REPORT_DIR/gcov"
+
+	# Kernel support built in?
+	test -d "/sys/kernel/debug/gcov/" || return
+
+	# lcov package installed?
+	command -v lcov > /dev/null || return
+	command -v genhtml > /dev/null || return
+
+	readarray -t gcno_dirs < <(_gcov_find_topdirs)
+	test "${#gcno_dirs[@]}" -gt 0 || return
+
+	mkdir -p "${output_dir}/"
+
+	lcov=(lcov --exclude 'include*' --capture)
+	lcov+=(--output-file "${output_dir}/gcov.report")
+	for d in "${gcno_dirs[@]}"; do
+		lcov+=(--directory "${d}")
+	done
+	genhtml=(genhtml -o "${output_dir}/" "${output_dir}/gcov.report")
+
+	("${lcov[@]}" && "${genhtml[@]}") > "${output_dir}/gcov.stdout" 2> "${output_dir}/gcov.stderr"
+}
+
+# Reset gcov usage data
+_gcov_reset() {
+	test -n "${REPORT_GCOV}" || return
+	if [ -w /sys/kernel/debug/gcov/reset ]; then
+		echo 1 > /sys/kernel/debug/gcov/reset
+	else
+		unset REPORT_GCOV
+	fi
+}
+
 _wrapup()
 {
 	seq="check"
@@ -523,6 +569,10 @@ _wrapup()
 					     "${#bad[*]}" "${#notrun[*]}" \
 					     "$((sect_stop - sect_start))"
 		fi
+
+		# Generate code coverage report
+		test -n "$REPORT_GCOV" && _gcov_generate_report "$REPORT_GCOV"
+
 		needwrap=false
 	fi
 
@@ -797,6 +847,7 @@ function run_section()
 	  echo "MOUNT_OPTIONS -- `_scratch_mount_options`"
 	fi
 	echo
+	_gcov_reset
 	needwrap=true
 
 	if [ ! -z "$SCRATCH_DEV" ]; then
