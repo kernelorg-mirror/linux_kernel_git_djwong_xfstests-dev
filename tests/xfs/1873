@@ -10,15 +10,13 @@
 . ./common/preamble
 _begin_fstest auto online_repair
 
-# Import common functions.
-source ./common/filter
-source ./common/fuzzy
-source ./common/quota
+. ./common/filter
+. ./common/fuzzy
+. ./common/quota
 
 # real QA test starts here
 
-# Modify as appropriate.
-_supported_fs generic
+_supported_fs xfs
 _require_xfs_db_command iunlink
 # The iunlink bucket repair code wasn't added to the AGI repair code
 # until after the directory repair code was merged

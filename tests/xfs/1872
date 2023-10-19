@@ -10,15 +10,13 @@
 . ./common/preamble
 _begin_fstest auto quick unlink
 
-# Import common functions.
-source ./common/filter
-source ./common/fuzzy
-source ./common/quota
+. ./common/filter
+. ./common/fuzzy
+. ./common/quota
 
 # real QA test starts here
 
-# Modify as appropriate.
-_supported_fs generic
+_supported_fs xfs
 _require_xfs_db_command iunlink
 _require_scratch_nocheck	# we'll run repair ourselves
 
