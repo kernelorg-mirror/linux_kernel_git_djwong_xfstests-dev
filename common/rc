@@ -2668,9 +2668,11 @@ _require_xfs_io_command()
 		param_checked="$pwrite_opts $param"
 		;;
 	"scrub"|"repair")
-		testio=`$XFS_IO_PROG -x -c "$command probe" $TEST_DIR 2>&1`
+		test -z "$param" && param="probe"
+		testio=`$XFS_IO_PROG -x -c "$command $param" $TEST_DIR 2>&1`
 		echo $testio | grep -q "Inappropriate ioctl" && \
 			_notrun "xfs_io $command support is missing"
+		param_checked="$param"
 		;;
 	"startupdate"|"commitupdate"|"cancelupdate")
 		$XFS_IO_PROG -f -c 'pwrite -S 0x58 0 128k -b 128k' $testfile > /dev/null
@@ -4430,6 +4432,38 @@ _check_dmesg()
 		fi
 		return 0
 	fi
+}
+
+# Log the arguments to the kernel log with userspace annotation, if possible.
+# Output is not sent to stdout.
+_kernlog()
+{
+	if [ -w /dev/ttyprintk ]; then
+		echo "$*" >> /dev/ttyprintk
+		return
+	fi
+
+	if [ -w /dev/kmsg ]; then
+		echo "[U] $*" >> /dev/kmsg
+		return
+	fi
+}
+
+# Convey stdin to the kernel log with userspace annotation, if possible.
+# Output will be appended to any file paths provided as arguments.
+_tee_kernlog()
+{
+	if [ -w /dev/ttyprintk ]; then
+		tee -a /dev/ttyprintk "$@"
+		return
+	fi
+
+	if [ -w /dev/kmsg ]; then
+		awk '{printf("[U] %s\n", $0) >> "/dev/kmsg"; printf("%s\n", $0);}' | tee -a "$@"
+		return
+	fi
+
+	tee -a "$@"
 }
 
 # Make whatever configuration changes we need ahead of testing fs shutdowns due
