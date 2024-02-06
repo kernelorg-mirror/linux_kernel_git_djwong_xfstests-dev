@@ -2,4 +2,9 @@ QA output created by 381
 Format and populate
 Find bmbt block
 Fuzz bmbt
+rightsib = lastbit: online repair failed (4).
+rightsib = lastbit: online re-scrub failed (4).
+rightsib = lastbit: offline re-scrub failed (1).
+rightsib = lastbit: online post-mod scrub failed (1).
+rightsib = lastbit: offline post-mod scrub failed (1).
 Done fuzzing bmbt
