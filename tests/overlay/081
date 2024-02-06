@@ -48,7 +48,7 @@ ovl_fsid=$(stat -f -c '%i' $test_dir)
 	echo "Overlayfs (uuid=null) and upper fs fsid differ"
 
 # Keep base fs mounted in case it has a volatile fsid (e.g. tmpfs)
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test legacy behavior is preserved by default for existing "impure" overlayfs
 _scratch_mount
@@ -57,7 +57,7 @@ ovl_fsid=$(stat -f -c '%i' $test_dir)
 [[ "$ovl_fsid" == "$upper_fsid" ]] || \
 	echo "Overlayfs (after uuid=null) and upper fs fsid differ"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test unique fsid on explicit opt-in for existing "impure" overlayfs
 _scratch_mount -o uuid=on
@@ -67,7 +67,7 @@ ovl_unique_fsid=$ovl_fsid
 [[ "$ovl_fsid" != "$upper_fsid" ]] || \
 	echo "Overlayfs (uuid=on) and upper fs fsid are the same"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test unique fsid is persistent by default after it was created
 _scratch_mount
@@ -76,7 +76,7 @@ ovl_fsid=$(stat -f -c '%i' $test_dir)
 [[ "$ovl_fsid" == "$ovl_unique_fsid" ]] || \
 	echo "Overlayfs (after uuid=on) unique fsid is not persistent"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test ignore existing persistent fsid on explicit opt-out
 _scratch_mount -o uuid=null
@@ -85,7 +85,7 @@ ovl_fsid=$(stat -f -c '%i' $test_dir)
 [[ "$ovl_fsid" == "$upper_fsid" ]] || \
 	echo "Overlayfs (uuid=null) and upper fs fsid differ"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test fallback to uuid=null with non-upper ovelray
 _overlay_scratch_mount_dirs "$upperdir:$lowerdir" "-" "-" -o ro,uuid=on
@@ -112,7 +112,7 @@ ovl_unique_fsid=$ovl_fsid
 [[ "$ovl_fsid" != "$upper_fsid" ]] || \
 	echo "Overlayfs (new) and upper fs fsid are the same"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 # Test unique fsid is persistent by default after it was created
 _scratch_mount -o uuid=on
@@ -121,7 +121,7 @@ ovl_fsid=$(stat -f -c '%i' $test_dir)
 [[ "$ovl_fsid" == "$ovl_unique_fsid" ]] || \
 	echo "Overlayfs (uuid=on) unique fsid is not persistent"
 
-$UMOUNT_PROG $SCRATCH_MNT
+_umount $SCRATCH_MNT
 
 echo "Silence is golden"
 status=0
