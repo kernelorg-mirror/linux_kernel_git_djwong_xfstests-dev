@@ -152,6 +152,12 @@ _mount()
 
 _umount()
 {
+	case "$FSTYP" in
+	"xfs")
+		_xfs_capture_timestats "$seqres.timestats" "$@"
+		;;
+	esac
+
 	$UMOUNT_PROG $*
 }
 
