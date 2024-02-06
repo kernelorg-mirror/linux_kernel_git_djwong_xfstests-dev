@@ -150,8 +150,52 @@ _mount()
 	return $ret
 }
 
+_sysfs_dump_path() {
+	local path="$1"
+	local want_newline="$2"
+	local sep='?'
+
+	test -f "$path" || return
+	test -r "$path" && sep=':'
+	stat -c '%A' "$path" | grep -q 'w' && sep='='
+	if [ -n "$want_newline" ]; then
+		echo "$path ${sep}"
+		cat "$path" 2> /dev/null
+	else
+		echo "$path ${sep} $(cat "$path" 2> /dev/null)"
+	fi
+}
+
+_sysfs_dump() {
+	local want_newline=
+	local i
+
+	for i in "$@"; do
+		test "$i" = "-n" && want_newline=1
+		if [ -d "$i" ]; then
+			for x in "$i/"*; do
+				_sysfs_dump_path "$x" "$want_newline"
+			done
+		else
+			_sysfs_dump_path "$i" "$want_newline"
+		fi
+	done
+}
+
 _umount()
 {
+	local files
+
+	case "$FSTYP" in
+	"xfs")
+		if [ -z "$SKIP_TIMESTATS" ]; then
+			echo "umount $* at $(date)" >> $seqres.timestats
+			readarray -t files < <(find -P /sys/kernel/debug/xfs/ -path '*timestats*' -type f -print -o -path '*scrub/stats' -type f -print)
+			_sysfs_dump -n "${files[@]}" >> $seqres.timestats 2>/dev/null
+		fi
+		;;
+	esac
+
 	$UMOUNT_PROG $*
 }
 
