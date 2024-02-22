@@ -34,7 +34,7 @@ _require_scratch
 _require_attrs security
 
 _scratch_mkfs >> $seqres.full
-_scratch_mount
+_scratch_mount -o add_log_feat
 _require_congruent_file_oplen $SCRATCH_MNT 1048576
 chmod a+rw $SCRATCH_MNT/
 
@@ -61,7 +61,7 @@ commit_and_check() {
 		$SHELL -c "$cmd" >> $seqres.full
 	fi
 
-	_scratch_cycle_mount
+	_scratch_cycle_mount add_log_feat
 	md5sum $SCRATCH_MNT/a | _filter_scratch
 	stat -c '%a %A %n' $SCRATCH_MNT/a | _filter_scratch
 	_getcap -v $SCRATCH_MNT/a | _filter_scratch
