@@ -9,8 +9,19 @@
 
 #include <config.h>
 
+#ifdef NEED_INTERNAL_XFS_IOC_EXCHRANGE
+/* Override struct xfs_exch_range in xfslibs */
+# define xfs_exch_range		sys_xfs_exch_range
+# define xfs_commit_range	sys_xfs_commit_range
+#endif
+
 #ifdef HAVE_XFS_XFS_H
 #include <xfs/xfs.h>
+#endif
+
+#ifdef NEED_INTERNAL_XFS_IOC_EXCHRANGE
+# undef xfs_exch_range
+# undef xfs_commit_range
 #endif
 
 #ifdef HAVE_XFS_LIBXFS_H
