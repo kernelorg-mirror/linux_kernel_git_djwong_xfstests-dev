@@ -23,8 +23,6 @@ file1 unaligned EOF to file2 nowhere near EOF
 exchrange: Invalid argument
 file2 unaligned EOF to file1 nowhere near EOF
 exchrange: Invalid argument
-Files of unequal length
-exchrange: Bad address
 Files on different filesystems
 exchrange: Invalid cross-device link
 Files on different mounts
