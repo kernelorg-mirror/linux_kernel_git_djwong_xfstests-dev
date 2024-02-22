@@ -273,7 +273,7 @@ void	uring_read_f(opnum_t, long);
 void	uring_write_f(opnum_t, long);
 void	write_f(opnum_t, long);
 void	writev_f(opnum_t, long);
-void	xchgrange_f(opnum_t, long);
+void	exchrange_f(opnum_t, long);
 
 char	*xattr_flag_to_string(int);
 
@@ -343,7 +343,7 @@ struct opdesc	ops[OP_LAST]	= {
 	[OP_URING_WRITE]   = {"uring_write",   uring_write_f,	1, 1 },
 	[OP_WRITE]	   = {"write",	       write_f,		4, 1 },
 	[OP_WRITEV]	   = {"writev",	       writev_f,	4, 1 },
-	[OP_XCHGRANGE]	   = {"xchgrange",     xchgrange_f,	2, 1 },
+	[OP_XCHGRANGE]	   = {"exchrange",     exchrange_f,	2, 1 },
 }, *ops_end;
 
 flist_t	flist[FT_nft] = {
@@ -2588,7 +2588,7 @@ chown_f(opnum_t opno, long r)
 
 /* exchange some arbitrary range of f1 to f2...fn. */
 void
-xchgrange_f(
+exchrange_f(
 	opnum_t			opno,
 	long			r)
 {
@@ -2618,7 +2618,7 @@ xchgrange_f(
 	init_pathname(&fpath1);
 	if (!get_fname(FT_REGm, r, &fpath1, NULL, NULL, &v1)) {
 		if (v1)
-			printf("%d/%lld: xchgrange read - no filename\n",
+			printf("%d/%lld: exchrange read - no filename\n",
 				procid, opno);
 		goto out_fpath1;
 	}
@@ -2626,7 +2626,7 @@ xchgrange_f(
 	init_pathname(&fpath2);
 	if (!get_fname(FT_REGm, random(), &fpath2, NULL, NULL, &v2)) {
 		if (v2)
-			printf("%d/%lld: xchgrange write - no filename\n",
+			printf("%d/%lld: exchrange write - no filename\n",
 				procid, opno);
 		goto out_fpath2;
 	}
@@ -2637,7 +2637,7 @@ xchgrange_f(
 	check_cwd();
 	if (fd1 < 0) {
 		if (v1)
-			printf("%d/%lld: xchgrange read - open %s failed %d\n",
+			printf("%d/%lld: exchrange read - open %s failed %d\n",
 				procid, opno, fpath1.path, e);
 		goto out_fpath2;
 	}
@@ -2647,7 +2647,7 @@ xchgrange_f(
 	check_cwd();
 	if (fd2 < 0) {
 		if (v2)
-			printf("%d/%lld: xchgrange write - open %s failed %d\n",
+			printf("%d/%lld: exchrange write - open %s failed %d\n",
 				procid, opno, fpath2.path, e);
 		goto out_fd1;
 	}
@@ -2655,7 +2655,7 @@ xchgrange_f(
 	/* Get file stats */
 	if (fstat64(fd1, &stat1) < 0) {
 		if (v1)
-			printf("%d/%lld: xchgrange read - fstat64 %s failed %d\n",
+			printf("%d/%lld: exchrange read - fstat64 %s failed %d\n",
 				procid, opno, fpath1.path, errno);
 		goto out_fd2;
 	}
@@ -2663,7 +2663,7 @@ xchgrange_f(
 
 	if (fstat64(fd2, &stat2) < 0) {
 		if (v2)
-			printf("%d/%lld: xchgrange write - fstat64 %s failed %d\n",
+			printf("%d/%lld: exchrange write - fstat64 %s failed %d\n",
 				procid, opno, fpath2.path, errno);
 		goto out_fd2;
 	}
@@ -2672,7 +2672,7 @@ xchgrange_f(
 	if (stat1.st_size < (stat1.st_blksize * 2) ||
 	    stat2.st_size < (stat2.st_blksize * 2)) {
 		if (v2)
-			printf("%d/%lld: xchgrange - files are too small\n",
+			printf("%d/%lld: exchrange - files are too small\n",
 				procid, opno);
 		goto out_fd2;
 	}
@@ -2729,7 +2729,7 @@ retry:
 		goto retry;
 	}
 	if (v1 || v2) {
-		printf("%d/%lld: xchgrange %s%s [%lld,%lld] -> %s%s [%lld,%lld]",
+		printf("%d/%lld: exchrange %s%s [%lld,%lld] -> %s%s [%lld,%lld]",
 			procid, opno,
 			fpath1.path, inoinfo1, (long long)off1, (long long)len,
 			fpath2.path, inoinfo2, (long long)off2, (long long)len);
