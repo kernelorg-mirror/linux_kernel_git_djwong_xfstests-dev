@@ -40,7 +40,7 @@ old_ctime="$(echo $(stat -c '%z' $dir/a $dir/b))"
 stat -c '%y %Y %z %Z' $dir/a $dir/b >> $seqres.full
 
 # Now try to exchrange
-$XFS_IO_PROG -c "exchrange $dir/b" $dir/a
+strace -s99 -o /tmp/log -f $XFS_IO_PROG -c "exchrange $dir/b" $dir/a
 
 # Snapshot the 'a' file after we swap
 echo after >> $seqres.full
