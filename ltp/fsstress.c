@@ -2594,7 +2594,6 @@ exchrange_f(
 {
 #ifdef XFS_IOC_EXCHANGE_RANGE
 	struct xfs_exch_range	fxr = { 0 };
-	static __u64		swap_flags = 0;
 	struct pathname		fpath1;
 	struct pathname		fpath2;
 	struct stat64		stat1;
@@ -2718,16 +2717,9 @@ exchrange_f(
 	fxr.file1_offset = off1;
 	fxr.length = len;
 	fxr.file2_offset = off2;
-	fxr.flags = swap_flags;
 
-retry:
 	ret = ioctl(fd2, XFS_IOC_EXCHANGE_RANGE, &fxr);
 	e = ret < 0 ? errno : 0;
-	if (e == EOPNOTSUPP && !(swap_flags & XFS_EXCH_RANGE_NONATOMIC)) {
-		swap_flags = XFS_EXCH_RANGE_NONATOMIC;
-		fxr.flags |= swap_flags;
-		goto retry;
-	}
 	if (v1 || v2) {
 		printf("%d/%lld: exchrange %s%s [%lld,%lld] -> %s%s [%lld,%lld]",
 			procid, opno,
