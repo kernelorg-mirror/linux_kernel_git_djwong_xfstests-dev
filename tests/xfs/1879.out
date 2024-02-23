@@ -1,0 +1,12 @@
+QA output created by 1879
+Format and mount
+Runtime corruption detection
+  "type":       "sick",
+  "structures":  ["bnobt"],
+Scrub corruption detection
+  "type":       "sick",
+  "structures":  ["bnobt"],
+  "type":       "corrupt",
+  "structures":  ["bnobt"],
+  "type":       "sick",
+  "structures":  ["bnobt"],

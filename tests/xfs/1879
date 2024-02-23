@@ -1,0 +1,75 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2024 Oracle.  All Rights Reserved.
+#
+# FS QA Test No. 1879
+#
+# Corrupt some metadata and try to access it with the health monitoring program
+# running.  Check that healthmon observes a metadata error.
+#
+. ./common/preamble
+_begin_fstest auto quick eio
+
+# Override the default cleanup function.
+_cleanup()
+{
+	cd /
+	rm -rf $tmp.* $testdir
+}
+
+# Import common functions.
+. ./common/filter
+
+# real QA test starts here
+_require_scratch_nocheck
+_require_xfs_io_command healthmon
+
+# Disable the scratch rt device to avoid test failures relating to the rt
+# bitmap consuming all the free space in our small data device.
+unset SCRATCH_RTDEV
+
+echo "Format and mount"
+_scratch_mkfs -d agcount=1 > $seqres.full 2>&1
+_scratch_xfs_db -x -c 'agf 0' -c 'fuzz bnoroot add' &>> $seqres.full
+
+# Try to allocate space to trigger a metadata corruption event
+echo "Runtime corruption detection"
+_scratch_mount
+$XFS_IO_PROG -c 'healthmon -c -v' $SCRATCH_MNT > $tmp.healthmon &
+$XFS_IO_PROG -f -c 'pwrite -b 256k 0 256k' -c fsync $SCRATCH_MNT/a &>> $seqres.full
+_scratch_unmount
+
+wait	# for healthmon to finish
+
+# Did we get errors?
+cat $tmp.healthmon >> $seqres.full
+grep -E '(sick|corrupt|structures.*bnobt)' $tmp.healthmon
+
+# Run scrub to trigger a health event from there too.
+echo "Scrub corruption detection"
+_scratch_mount
+if _supports_xfs_scrub $SCRATCH_MNT $SCRATCH_DEV; then
+	$XFS_IO_PROG -c 'healthmon -c -v' $SCRATCH_MNT > $tmp.healthmon &
+	$XFS_SCRUB_PROG -n $SCRATCH_MNT &>> $seqres.full
+	_scratch_unmount
+
+	wait	# for healthmon to finish
+
+	# Did we get errors?
+	cat $tmp.healthmon >> $seqres.full
+	grep -E '(sick|corrupt|structures.*bnobt)' $tmp.healthmon
+else
+	# mock the output since we don't support scrub
+	_scratch_unmount
+	cat << ENDL
+  "type":       "sick",
+  "structures":  ["bnobt"],
+  "type":       "corrupt",
+  "structures":  ["bnobt"],
+  "type":       "sick",
+  "structures":  ["bnobt"],
+ENDL
+fi
+
+status=0
+exit
