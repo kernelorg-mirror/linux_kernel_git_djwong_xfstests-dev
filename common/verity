@@ -43,7 +43,16 @@ _require_scratch_verity()
 
 	# The filesystem may be aware of fs-verity but have it disabled by
 	# CONFIG_FS_VERITY=n.  Detect support via sysfs.
-	if [ ! -e /sys/fs/$fstyp/features/verity ]; then
+	case $FSTYP in
+	xfs)
+		_scratch_unmount
+		_check_scratch_xfs_features VERITY &>>$seqres.full
+		_scratch_mount
+	;;
+	*)
+		test -e /sys/fs/$fstyp/features/verity
+	esac
+	if [ ! $? ]; then
 		_notrun "kernel $fstyp isn't configured with verity support"
 	fi
 
@@ -200,6 +209,9 @@ _scratch_mkfs_verity()
 	case $FSTYP in
 	ext4|f2fs)
 		_scratch_mkfs -O verity
+		;;
+	xfs)
+		_scratch_mkfs -i verity
 		;;
 	btrfs)
 		_scratch_mkfs
@@ -405,6 +417,21 @@ _fsv_scratch_corrupt_merkle_tree()
 			$BTRFS_CORRUPT_BLOCK_PROG -r 5 -I $ino,37,0 -v $ascii -o $offset -b 1 $SCRATCH_DEV
 			(( offset += 1 ))
 		done
+		_scratch_mount
+		;;
+	xfs)
+		local ino=$(stat -c '%i' $file)
+		local attr_offset=$(( $offset % $FSV_BLOCK_SIZE ))
+		local attr_index=$(printf "%08d" $(( offset - attr_offset )))
+		_scratch_unmount
+		# Attribute name is 8 bytes long (index of Merkle tree page)
+		_scratch_xfs_db -x -c "inode $ino" \
+			-c "attr_modify -f -m 8 -o $attr_offset $attr_index \"BUG\"" \
+			>>$seqres.full
+		# In case bsize == 4096 and merkle block size == 1024, by
+		# modifying attribute with 'attr_modify we can corrupt quota
+		# account. Let's repair it
+		_scratch_xfs_repair > $seqres.full 2>&1
 		_scratch_mount
 		;;
 	*)
