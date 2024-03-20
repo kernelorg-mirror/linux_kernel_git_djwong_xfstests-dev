@@ -53,7 +53,7 @@ _scratch_cycle_mount
 snappy() {
 	n=0
 	while [ ! -e $finished_file ]; do
-		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
+		out="$(_reflink_snapshot $testdir/file1 $testdir/snap_$n 2>&1)"
 		res=$?
 		echo $out | grep -q "No space left" && break
 		test -n "$out" && echo $out

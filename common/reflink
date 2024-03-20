@@ -226,6 +226,14 @@ _cp_reflink() {
 	cp --reflink=always -p -f "$file1" "$file2"
 }
 
+# Create file2 as a snapshot of file1 via cp and possibly reflink.
+_reflink_snapshot() {
+	file1="$1"
+	file2="$2"
+
+	cp --reflink=auto -p -f "$file1" "$file2"
+}
+
 # Reflink some file1 into file2
 _reflink() {
 	file1="$1"
