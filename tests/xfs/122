@@ -15,6 +15,9 @@ _begin_fstest other auto quick clone realtime
 
 _require_command "$INDENT_PROG" indent
 
+# only run on djwong development kernel
+uname -r | grep -q -E 'xfs[xa]' || _notrun "primary superblock format in flux"
+
 # Starting in Linux 6.1, the EFI log formats were adjusted away from using
 # single-element arrays as flex arrays.
 _wants_kernel_commit 03a7485cd701 \
