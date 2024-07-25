@@ -1318,8 +1318,8 @@ _require_xfs_spaceman_command()
 	testfile=$TEST_DIR/$$.xfs_spaceman
 	touch $testfile
 	case $command in
-	"health")
-		testio=`$XFS_SPACEMAN_PROG -c "health $param" $TEST_DIR 2>&1`
+	"health"|"listfsprops")
+		testio=`$XFS_SPACEMAN_PROG -c "$command $param" $TEST_DIR 2>&1`
 		param_checked=1
 		;;
 	*)

@@ -1,0 +1,9 @@
+QA output created by 1889
+Info: TEST_DIR/1889.mount: Checking and repairing per self_healing directive.
+Info: TEST_DIR/1889.mount: Checking per self_healing directive.
+Info: TEST_DIR/1889.mount: Disabling scrub per self_healing directive.
+Info: TEST_DIR/1889.mount: Checking per self_healing directive.
+Info: TEST_DIR/1889.mount: Optimizing per self_healing directive.
+Info: TEST_DIR/1889.mount: Checking and repairing per self_healing directive.
+Info: TEST_DIR/1889.mount: Disabling scrub per self_healing directive.
+Info: TEST_DIR/1889.mount: Checking and repairing per self_healing directive.

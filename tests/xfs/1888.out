@@ -1,0 +1,9 @@
+QA output created by 1888
+self_healing=repair
+failed to get attr xfs:self_healing on inode XXX: No data available
+self_healing=none
+self_healing=check
+self_healing=optimize
+self_healing=repair
+self_healing=none
+self_healing=repair
