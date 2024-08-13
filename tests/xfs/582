@@ -37,7 +37,11 @@ $XFS_IO_PROG -c 'scrub rtsummary' -c 'scrub rtsummary' "$SCRATCH_MNT" 2>&1 | \
 	grep -q 'Scan was not complete' && \
 	_notrun "rtsummary scrub is incomplete"
 
-_scratch_xfs_stress_scrub -s "scrub rtsummary"
+if _xfs_has_feature "$SCRATCH_MNT" rtgroups; then
+	_scratch_xfs_stress_scrub -s "scrub rtsummary %rgno%"
+else
+	_scratch_xfs_stress_scrub -s "scrub rtsummary"
+fi
 
 # success, all done
 echo Silence is golden

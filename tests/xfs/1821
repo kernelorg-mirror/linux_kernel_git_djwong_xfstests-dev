@@ -31,7 +31,11 @@ _scratch_mount
 _require_xfs_has_feature "$SCRATCH_MNT" realtime
 _xfs_force_bdev realtime $SCRATCH_MNT
 
-_scratch_xfs_stress_online_repair -s "repair rtbitmap" -s "repair rgbitmap %rgno%"
+if _xfs_has_feature "$SCRATCH_MNT" rtgroups; then
+	_scratch_xfs_stress_online_repair -s "repair rtbitmap %rgno%"
+else
+	_scratch_xfs_stress_online_repair -s "repair rtbitmap"
+fi
 
 # success, all done
 echo Silence is golden
