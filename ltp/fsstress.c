@@ -347,6 +347,7 @@ struct opdesc	ops[OP_LAST]	= {
 	[OP_WRITE]	   = {"write",	       write_f,		4, 1 },
 	[OP_WRITEV]	   = {"writev",	       writev_f,	4, 1 },
 	[OP_EXCHANGE_RANGE]= {"exchangerange", exchangerange_f,	2, 1 },
+	[OP_UNSHARE]	   = {"unshare",       unshare_f,	1, 1 },
 }, *ops_end;
 
 flist_t	flist[FT_nft] = {
