@@ -139,6 +139,7 @@ typedef enum {
 	OP_TRUNCATE,
 	OP_UNLINK,
 	OP_UNRESVSP,
+	OP_UNSHARE,
 	OP_URING_READ,
 	OP_URING_WRITE,
 	OP_WRITE,
@@ -246,6 +247,7 @@ void	punch_f(opnum_t, long);
 void	zero_f(opnum_t, long);
 void	collapse_f(opnum_t, long);
 void	insert_f(opnum_t, long);
+void	unshare_f(opnum_t, long);
 void	read_f(opnum_t, long);
 void	readlink_f(opnum_t, long);
 void	readv_f(opnum_t, long);
@@ -344,6 +346,7 @@ struct opdesc	ops[OP_LAST]	= {
 	[OP_WRITE]	   = {"write",	       write_f,		4, 1 },
 	[OP_WRITEV]	   = {"writev",	       writev_f,	4, 1 },
 	[OP_EXCHANGE_RANGE]= {"exchangerange", exchangerange_f,	2, 1 },
+	[OP_UNSHARE]	   = {"unshare",       unshare_f,	1, 1 },
 }, *ops_end;
 
 flist_t	flist[FT_nft] = {
@@ -3756,6 +3759,7 @@ struct print_flags falloc_flags [] = {
 	{ FALLOC_FL_COLLAPSE_RANGE, "COLLAPSE_RANGE"},
 	{ FALLOC_FL_ZERO_RANGE, "ZERO_RANGE"},
 	{ FALLOC_FL_INSERT_RANGE, "INSERT_RANGE"},
+	{ FALLOC_FL_UNSHARE_RANGE, "UNSHARE_RANGE"},
 	{ -1, NULL}
 };
 
@@ -4455,6 +4459,16 @@ insert_f(opnum_t opno, long r)
 {
 #ifdef HAVE_LINUX_FALLOC_H
 	do_fallocate(opno, r, FALLOC_FL_INSERT_RANGE);
+#endif
+}
+
+void
+unshare_f(opnum_t opno, long r)
+{
+#ifdef HAVE_LINUX_FALLOC_H
+# ifdef FALLOC_FL_UNSHARE_RANGE
+	do_fallocate(opno, r, FALLOC_FL_UNSHARE_RANGE);
+# endif
 #endif
 }
 
