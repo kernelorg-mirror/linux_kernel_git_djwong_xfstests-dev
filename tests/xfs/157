@@ -65,9 +65,34 @@ scenario() {
 	SCRATCH_RTDEV=$orig_rtdev
 }
 
+extract_mkfs_label() {
+	set -- $MKFS_OPTIONS
+	local in_l
+
+	for arg in "$@"; do
+		if [ "$in_l" = "1" ]; then
+			echo "$arg"
+			return 0
+		elif [ "$arg" = "-L" ]; then
+			in_l=1
+		fi
+	done
+	return 1
+}
+
 check_label() {
-	_scratch_mkfs_sized "$fs_size" "" -L oldlabel >> $seqres.full 2>&1
-	_scratch_xfs_db -c label
+	local existing_label
+	local filter
+
+	# Handle -L somelabel being set in MKFS_OPTIONS
+	if existing_label="$(extract_mkfs_label)"; then
+		filter=(sed -e "s|$existing_label|oldlabel|g")
+		_scratch_mkfs_sized $fs_size >> $seqres.full
+	else
+		filter=(cat)
+		_scratch_mkfs_sized "$fs_size" "" -L oldlabel >> $seqres.full 2>&1
+	fi
+	_scratch_xfs_db -c label | "${filter[@]}"
 	_scratch_xfs_admin -L newlabel "$@" >> $seqres.full
 	_scratch_xfs_db -c label
 	_scratch_xfs_repair -n &>> $seqres.full || echo "Check failed?"
