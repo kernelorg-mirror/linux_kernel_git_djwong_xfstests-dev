@@ -1004,7 +1004,14 @@ __stress_scrub_fsstress_loop() {
 	local runningfile="$2"
 	local remount_period="$3"
 	local stress_tgt="$4"
-	local focus=()
+	local focus=(-p 4 -n 2000000)
+	local scale_args=()
+	local has_rt
+	local args
+	local rt_args
+
+	test $FSTYP = "xfs" && _xfs_has_feature "$SCRATCH_MNT" realtime && \
+		has_rt=1
 
 	case "$stress_tgt" in
 	"parent")
@@ -1096,8 +1103,19 @@ __stress_scrub_fsstress_loop() {
 
 	# As of March 2022, 2 million fsstress ops should be enough to keep
 	# any filesystem busy for a couple of hours.
-	local args=$(_scale_fsstress_args -p 4 -d $SCRATCH_MNT -n 2000000 "${focus[@]}")
-	echo "Running $FSSTRESS_PROG $args" >> $seqres.full
+	if [ -n "$has_rt" ]; then
+		mkdir -p $SCRATCH_MNT/rt $SCRATCH_MNT/data
+		$XFS_IO_PROG -c 'chattr +rt' $SCRATCH_MNT/rt
+		$XFS_IO_PROG -c 'chattr -rt' $SCRATCH_MNT/data
+
+		rt_args=$(_scale_fsstress_args -d $SCRATCH_MNT/rt "${focus[@]}")
+		args=$(_scale_fsstress_args -d $SCRATCH_MNT/data "${focus[@]}")
+		echo "Running $FSSTRESS_PROG $args" >> $seqres.full
+		echo "Running $FSSTRESS_PROG $rt_args" >> $seqres.full
+	else
+		args=$(_scale_fsstress_args -d $SCRATCH_MNT "${focus[@]}")
+		echo "Running $FSSTRESS_PROG $args" >> $seqres.full
+	fi
 
 	if [ -n "$remount_period" ]; then
 		local mode="rw"
@@ -1108,6 +1126,7 @@ __stress_scrub_fsstress_loop() {
 			test "$mode" = "rw" && __stress_scrub_clean_scratch && continue
 
 			_run_fsstress_bg $args $rw_arg >> $seqres.full
+			test -n "$has_rt" && _run_fsstress_bg $rt_args $rw_arg >> $seqres.full
 			sleep $remount_period
 			_kill_fsstress
 			res=$?
@@ -1135,8 +1154,10 @@ __stress_scrub_fsstress_loop() {
 	while __stress_scrub_running "$end" "$runningfile"; do
 		# Need to recheck running conditions if we cleared anything
 		__stress_scrub_clean_scratch && continue
-		_run_fsstress $args >> $seqres.full
-		echo "fsstress exits with $? at $(date)" >> $seqres.full
+		_run_fsstress_bg $args >> $seqres.full
+		test -n "$has_rt" && _run_fsstress_bg $rt_args >> $seqres.full
+		sleep 10
+		_kill_fsstress
 	done
 	rm -f "$runningfile"
 }
