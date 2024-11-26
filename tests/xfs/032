@@ -25,6 +25,17 @@ IMGFILE=$TEST_DIR/${seq}_copy.img
 
 echo "Silence is golden."
 
+# Can we mount blocksize > pagesize filesystems?
+for ((blocksize = PAGESIZE; blocksize <= 65536; blocksize *= 2)); do
+	_scratch_mkfs -b size=$blocksize -d size=1g >> $seqres.full 2>&1 || \
+		continue
+
+	_try_scratch_mount || continue
+	mounted_blocksize="$(stat -f -c '%S' $SCRATCH_MNT)"
+	_scratch_unmount
+	test "$blocksize" -eq "$mounted_blocksize" && PAGESIZE=$blocksize
+done
+
 do_copy()
 {
 	local opts="$*"
