@@ -357,8 +357,8 @@ struct opdesc	ops[OP_LAST]	= {
 	[OP_UNLINK]	   = {"unlink",	       unlink_f,	1, 1 },
 	[OP_UNRESVSP]	   = {"unresvsp",      unresvsp_f,	1, 1 },
 	[OP_UNSHARE]	   = {"unshare",       unshare_f,	1, 1 },
-	[OP_URING_READ]	   = {"uring_read",    uring_read_f,	1, 0 },
-	[OP_URING_WRITE]   = {"uring_write",   uring_write_f,	1, 1 },
+	[OP_URING_READ]	   = {"uring_read",    uring_read_f,	-1, 0 },
+	[OP_URING_WRITE]   = {"uring_write",   uring_write_f,	-1, 1 },
 	[OP_WRITE]	   = {"write",	       write_f,		4, 1 },
 	[OP_WRITEV]	   = {"writev",	       writev_f,	4, 1 },
 	[OP_WRITE_DONTCACHE]= {"write_dontcache", write_dontcache_f,4, 1 },
@@ -530,7 +530,7 @@ int main(int argc, char **argv)
 	xfs_error_injection_t	        err_inj;
 	struct sigaction action;
 	int		loops = 1;
-	const char	*allopts = "cd:e:f:i:l:m:M:n:o:p:rRs:S:vVwx:X:zH";
+	const char	*allopts = "cd:e:f:i:l:m:M:n:o:p:rRs:S:UvVwx:X:zH";
 	long long	duration;
 
 	errrange = errtag = 0;
@@ -626,6 +626,12 @@ int main(int argc, char **argv)
 			printf("\n");
                         nousage=1;
 			break;
+		case 'U':
+			if (ops[OP_URING_READ].freq == -1)
+				ops[OP_URING_READ].freq = 1;
+			if (ops[OP_URING_WRITE].freq == -1)
+				ops[OP_URING_WRITE].freq = 1;
+			break;
 		case 'V':
 			verifiable_log = 1;
 			break;
@@ -662,6 +668,11 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+	if (ops[OP_URING_READ].freq == -1)
+		ops[OP_URING_READ].freq = 0;
+	if (ops[OP_URING_WRITE].freq == -1)
+		ops[OP_URING_WRITE].freq = 0;
 
         if (!dirname) {
             /* no directory specified */
