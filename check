@@ -1093,6 +1093,12 @@ function run_section()
 		$timestamp && _timestamp
 		stop=`_wallclock`
 
+		# Prevent large log files from eating a bunch of space
+		test -f $seqres.dmesg && \
+			maybe_compress_logfile $seqres.dmesg $MAX_DMESG_SIZE
+		test -f $seqres.full && \
+			maybe_compress_logfile $seqres.full $MAX_FULL_SIZE
+
 		if [ ! -f $seq.out ]; then
 			_dump_err "no qualified output"
 			tc_status="fail"
@@ -1122,6 +1128,8 @@ function run_section()
 				echo "(Run '$diff $here/$seq.out $seqres.out.bad'" \
 					" to see the entire diff)"
 			fi; } | sed -e 's/^\(.\)/    \1/'
+			test -f $seqres.out.bad && \
+				maybe_compress_logfile $seqres.out.bad $MAX_OUTBAD_SIZE
 			tc_status="fail"
 		fi
 		if [ -f $seqres.hints ]; then

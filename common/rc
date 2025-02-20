@@ -4781,6 +4781,25 @@ _tee_kernlog()
 	tee -a "$@"
 }
 
+# If a log file compressor is set and a maximum size is given, compress the
+# log file.
+maybe_compress_logfile()
+{
+	local logfile="$1"
+	local maxsize="$2"
+	local filesize
+
+	test -f "${logfile}" || return 1
+	test -n "${LOG_COMPRESSOR}" || return 1
+	((maxsize > 0)) || return 1
+
+	filesize=$(stat -c '%s' "${logfile}")
+	((filesize <= maxsize)) && return 0
+
+	# Run compression in a subshell with higher OOM score
+	(_adjust_oom_score 250; ${LOG_COMPRESSOR} "${logfile}")
+}
+
 # Make whatever configuration changes we need ahead of testing fs shutdowns due
 # to unexpected IO errors while updating metadata.  The sole parameter should
 # be the fs device, e.g.  $SCRATCH_DEV.

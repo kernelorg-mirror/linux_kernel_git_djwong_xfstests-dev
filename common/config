@@ -347,6 +347,12 @@ if [ -x /usr/sbin/selinuxenabled ] && /usr/sbin/selinuxenabled; then
 	export SELINUX_MOUNT_OPTIONS
 fi
 
+# maximum size of uncompressed test artifact files
+true "${MAX_OUTPUT_SIZE:=65536}"
+true "${MAX_FULL_SIZE:=$((MAX_OUTPUT_SIZE * 2))}"
+true "${MAX_DMESG_SIZE:=${MAX_OUTPUT_SIZE}}"
+true "${MAX_OUTBAD_SIZE:=${MAX_OUTPUT_SIZE}}"
+
 _common_mount_opts()
 {
 	case $FSTYP in

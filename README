@@ -232,6 +232,10 @@ Tools specification:
     - Set COREDUMP_COMPRESSOR to a compression program to compress crash dumps.
       This program must accept '-f' and the name of a file to compress.  In
       other words, it must emulate gzip.
+ - logs:
+    - Set LOG_COMPRESSOR to a compression program to compress test artifact
+      files.  This program must accept '-f' and the name of a file to compress.
+      In other words, it must emulate gzip.
 
 Kernel/Modules related configuration:
  - Set TEST_FS_MODULE_RELOAD=1 to unload the module and reload it between

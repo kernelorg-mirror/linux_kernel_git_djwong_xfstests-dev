@@ -906,14 +906,25 @@ __stress_xfs_scrub_loop() {
 	shift; shift; shift
 	local signal_ret="$(( $(kill -l SIGPIPE) + 128 ))"
 	local scrublog="$tmp.scrub"
+	local now
+	local compress
 
 	while __stress_scrub_running "$scrub_startat" "$runningfile"; do
 		sleep 1
 	done
 
 	while __stress_scrub_running "$end" "$runningfile"; do
-		_scratch_scrub "$@" &> $scrublog
-		res=$?
+		now="$(date +%s)"
+		if ((end - 300 >= now)); then
+			# could run for a long time, let's compress
+			compress=1
+			_scratch_scrub "$@" 2>&1 | $LOG_COMPRESSOR > $scrublog
+			res="${PIPESTATUS[0]}"
+		else
+			compress=
+			_scratch_scrub "$@" &> $scrublog
+			res=$?
+		fi
 		if [ "$res" -eq "$signal_ret" ]; then
 			# Ignore SIGPIPE because the cleanup function sends
 			# that to terminate xfs_scrub
@@ -923,12 +934,22 @@ __stress_xfs_scrub_loop() {
 		if [ "$res" -ge 128 ]; then
 			# Report scrub death due to fatal signals
 			echo "xfs_scrub died with SIG$(kill -l $res)"
-			cat $scrublog >> $seqres.full 2>/dev/null
+			if [ -n "$compress" ]; then
+				$LOG_COMPRESSOR -d < $scrublog >> $seqres.full 2>/dev/null
+			else
+				cat $scrublog >> $seqres.full 2>/dev/null
+			fi
 		elif [ "$((res & 0x1))" -gt 0 ]; then
 			# Report uncorrected filesystem errors
 			echo "xfs_scrub reports uncorrected errors:"
-			grep -E '(Repair unsuccessful;|Corruption:)' $scrublog
-			cat $scrublog >> $seqres.full 2>/dev/null
+			if [ -n "$compress" ]; then
+				$LOG_COMPRESSOR -d < $scrublog 2>/dev/null | \
+					tee -a $seqres.full | \
+					grep -E '(Repair unsuccessful;|Corruption:)'
+			else
+				grep -E '(Repair unsuccessful;|Corruption:)' $scrublog
+				cat $scrublog >> $seqres.full 2>/dev/null
+			fi
 		fi
 		rm -f $scrublog
 	done
