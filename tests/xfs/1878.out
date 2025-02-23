@@ -1,0 +1,10 @@
+QA output created by 1878
+Format and mount
+pwrite: Input/output error
+pread: Input/output error
+pread: Input/output error
+fsync: Input/output error
+VICTIM pos NUM len NUM: directio_write failed
+VICTIM pos NUM len NUM: directio_read failed
+VICTIM pos NUM len NUM: readahead failed
+VICTIM pos NUM len NUM: writeback failed
