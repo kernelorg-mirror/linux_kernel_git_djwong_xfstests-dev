@@ -1,0 +1,17 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2024-2025 Oracle.  All Rights Reserved.
+#
+# FS QA Test 007
+#
+# Test capturing dmesg crap.
+#
+. ./common/preamble
+_begin_fstest selftest
+
+test -w /dev/ttyprintk || test -w /dev/kmsg || _notrun "cannot write to dmesg"
+
+_kernlog "WARNING: This is a self test for dmesg capture."
+
+status=0
+exit
