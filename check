@@ -821,6 +821,20 @@ function run_section()
 		echo "SECTION       -- $section"
 	fi
 
+	# If we're running in a private mount namespace, /tmp is a private
+	# directory.  We /could/ just mkdir it, but we'd rather have people
+	# set those paths elsewhere.
+	if [ "$HAVE_PRIVATENS" = yes ] && [[ $TEST_DIR =~ ^\/tmp ]]; then
+		echo "$TEST_DIR: TEST_DIR must not be in /tmp"
+		status=1
+		exit
+	fi
+	if [ "$HAVE_PRIVATENS" = yes ] && [[ $SCRATCH_MNT =~ ^\/tmp ]]; then
+		echo "$SCRATCH_MNT: SCRATCH_MNT must not be in /tmp"
+		status=1
+		exit
+	fi
+
 	sect_start=`_wallclock`
 	if $RECREATE_TEST_DEV || [ "$OLD_FSTYP" != "$FSTYP" ]; then
 		echo "RECREATING    -- $FSTYP on $TEST_DEV"
