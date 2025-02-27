@@ -726,6 +726,18 @@ _btrfs_direct_read_on_mirror()
 	local offset=$4
 	local size=$5
 
+	if [ "$FSTESTS_ISOL" = "privatens" ]; then
+		# In private namespace mode, the pids we see are not the
+		# systemwide pids that are used to pick a mirror.  Hence we
+		# cannot use the BASHPID trick below to cycle through PIDs
+		# until we get one that will select the mirror that we want.
+		# Instead, try to read the mirrors twice and hope for the best?
+		for ((i = 0; i < (nr_mirrors * 11); i++)); do
+			$XFS_IO_PROG -d -c "pread -b $size $offset $size" $file
+		done >> $seqres.full
+		return
+	fi
+
 	while [[ -z $( (( BASHPID % nr_mirrors == mirror )) &&
 		exec $XFS_IO_PROG -d \
 			-c "pread -b $size $offset $size" $file) ]]; do
@@ -759,6 +771,19 @@ _btrfs_buffered_read_on_mirror()
 	fi
 	_scratch_unmount
 	_mount $dev -o $opts $SCRATCH_MNT
+
+	if [ "$FSTESTS_ISOL" = "privatens" ]; then
+		# In private namespace mode, the pids we see are not the
+		# systemwide pids that are used to pick a mirror.  Hence we
+		# cannot use the BASHPID trick below to cycle through PIDs
+		# until we get one that will select the mirror that we want.
+		# Instead, try to read the mirrors twice and hope for the best?
+		for ((i = 0; i < (nr_mirrors * 11); i++)); do
+			$XFS_IO_PROG -c "pread -b $size $offset $size" $file
+		done >> $seqres.full
+		return
+	fi
+
 	while [[ -z $( (( BASHPID % nr_mirrors == mirror )) &&
 		exec $XFS_IO_PROG \
 			-c "pread -b $size $offset $size" $file) ]]; do
