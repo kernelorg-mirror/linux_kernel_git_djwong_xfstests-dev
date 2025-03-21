@@ -1,0 +1,98 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2024-2025 Oracle.  All Rights Reserved.
+#
+# FS QA Test No. 1897
+#
+# Check that xfs_healer can report media errors.
+
+. ./common/preamble
+_begin_fstest auto quick scrub eio selfhealing
+
+. ./common/fuzzy
+. ./common/filter
+. ./common/systemd
+
+_require_scratch
+_require_scrub
+_require_command "$XFS_HEALER_PROG" "xfs_healer"
+_require_xfs_io_command mediaerror
+
+filter_healer() {
+	_filter_scratch | \
+		grep 'media error' | \
+		sed -e 's/0x[0-9a-f]*/NUM/g' \
+		    -e 's/datadev/DEVICE/g' \
+		    -e 's/rtdev/DEVICE/g'
+}
+
+_scratch_mkfs >> $seqres.full
+
+_scratch_mount
+_scratch_xfs_healer --check &>/dev/null || \
+	_notrun "health monitoring not supported on this kernel"
+
+# Write a file with 4 file blocks worth of data, figure out the LBA to target
+victim=$SCRATCH_MNT/a
+file_blksz=$(_get_file_block_size $SCRATCH_MNT)
+$XFS_IO_PROG -f -c "pwrite -S 0x58 0 $((4 * file_blksz))" -c "fsync" $victim >> $seqres.full
+unset errordev
+
+awk_len_prog='{print $6}'
+if _xfs_is_realtime_file $victim; then
+	if ! _xfs_has_feature $SCRATCH_MNT rtgroups; then
+		awk_len_prog='{print $4}'
+	fi
+	errordev="-r"
+fi
+bmap_str="$($XFS_IO_PROG -c "bmap -elpv" $victim | grep "^[[:space:]]*0:")"
+echo "$errordev:$bmap_str" >> $seqres.full
+
+phys="$(echo "$bmap_str" | $AWK_PROG '{print $3}')"
+len="$(echo "$bmap_str" | $AWK_PROG "$awk_len_prog")"
+
+fs_blksz=$(_get_block_size $SCRATCH_MNT)
+echo "file_blksz:$file_blksz:fs_blksz:$fs_blksz" >> $seqres.full
+kernel_sectors_per_fs_block=$((fs_blksz / 512))
+
+# Did we get at least 4 fs blocks worth of extent?
+min_len_sectors=$(( 4 * kernel_sectors_per_fs_block ))
+test "$len" -lt $min_len_sectors && \
+	_fail "could not format a long enough extent on an empty fs??"
+
+phys_start=$(echo "$phys" | sed -e 's/\.\..*//g')
+
+echo "$errordev:$phys:$len:$fs_blksz:$phys_start" >> $seqres.full
+echo "victim file:" >> $seqres.full
+od -tx1 -Ad -c $victim >> $seqres.full
+
+# All sector numbers that we feed to the kernel must be in units of 512b, but
+# they also must be aligned to the device's logical block size.
+logical_block_size=`$here/src/min_dio_alignment $SCRATCH_MNT $SCRATCH_DEV`
+kernel_sectors_per_device_lba=$((logical_block_size / 512))
+
+# Mark as bad one of the device LBAs in the middle of the extent.  Target the
+# second LBA of the third block of the four-block file extent that we allocated
+# earlier, but without overflowing into the fourth file block.
+bad_sector=$(( phys_start + (2 * kernel_sectors_per_fs_block) ))
+bad_len=$kernel_sectors_per_device_lba
+if (( kernel_sectors_per_device_lba < kernel_sectors_per_fs_block )); then
+	bad_sector=$((bad_sector + kernel_sectors_per_device_lba))
+fi
+if (( (bad_sector % kernel_sectors_per_device_lba) != 0)); then
+	echo "bad_sector $bad_sector not congruent with device logical block size $logical_block_size"
+fi
+
+echo "Simulate media error"
+_scratch_invoke_healer "$tmp.healer"
+$XFS_IO_PROG -x -c "mediaerror $errordev $bad_sector $bad_len" $SCRATCH_MNT
+
+# Unmount filesystem to start fresh
+echo "Kill healer"
+_scratch_kill_healer
+cat $tmp.healer >> $seqres.full
+cat $tmp.healer | filter_healer
+
+# success, all done
+status=0
+exit

@@ -1,0 +1,60 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2024-2025 Oracle.  All Rights Reserved.
+#
+# FS QA Test 1883
+#
+# Make sure that xfs_healer correctly validates the json events that it gets
+# from the kernel.  We simulate this by using the --everything mode so we get
+# all the events, not just the sickness reports.
+#
+. ./common/preamble
+_begin_fstest auto selfhealing
+
+. ./common/filter
+. ./common/fuzzy
+. ./common/systemd
+. ./common/populate
+
+_require_scrub
+_require_xfs_io_command "scrub"		# online check support
+_require_command "$XFS_HEALER_PROG" "xfs_healer"
+_require_scratch
+
+# Does this fs support health monitoring?
+_scratch_mkfs >> $seqres.full
+_scratch_mount
+
+_scratch_xfs_healer --require-validation --check 2> /dev/null || \
+	_notrun "health monitoring with validation not supported on this system"
+_scratch_unmount
+
+# Create a sample fs with all the goodies
+_scratch_populate_cached nofill &>> $seqres.full
+_scratch_mount
+
+_scratch_invoke_healer "$tmp.healer" --require-validation --everything --debug-fast
+
+# Run scrub to make some noise
+_scratch_scrub -b -n >> $seqres.full
+
+# Wait for up to 60 seconds for the log file to stop growing
+old_logsz=
+new_logsz=$(stat -c '%s' $tmp.healer)
+for ((i = 0; i < 60; i++)); do
+	test "$old_logsz" = "$new_logsz" && break
+	old_logsz="$new_logsz"
+	sleep 1
+	new_logsz=$(stat -c '%s' $tmp.healer)
+done
+
+_scratch_kill_healer
+
+# Look for schema validation errors
+grep -q 'not valid under any of the given schemas' $tmp.healer && \
+	echo "Should not have found schema validation errors"
+cat $tmp.healer >> $seqres.full
+
+echo Silence is golden
+status=0
+exit
