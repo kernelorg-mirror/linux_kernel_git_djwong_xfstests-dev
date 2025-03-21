@@ -1,0 +1,21 @@
+QA output created by 1896
+Try buffered read
+pread: Input/output error
+Try directio read
+pread: Input/output error
+Try directio write
+pwrite: Input/output error
+Try buffered write
+fsync: Input/output error
+Fix device
+Kill healer
+VICTIM pos NUM len NUM: directio_read failed
+VICTIM pos NUM len NUM: directio_write failed
+VICTIM pos NUM len NUM: readahead failed
+VICTIM pos NUM len NUM: writeback failed
+Remount and restart healer
+Try buffered read again
+Try directio read again
+Try directio write again
+Try buffered write again
+Kill healer again

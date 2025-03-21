@@ -1,0 +1,5 @@
+QA output created by 1897
+Simulate media error
+Kill healer
+SCRATCH_MNT DEVICE daddr NUM bbcount NUM: media error
+VICTIM pos NUM len NUM: storage failed
