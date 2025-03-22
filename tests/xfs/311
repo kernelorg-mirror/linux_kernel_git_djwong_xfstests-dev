@@ -30,6 +30,9 @@ _cleanup()
 _require_scratch
 _require_dm_target delay
 
+# The dm-delay map added by this test doesn't work on zoned devices
+_require_non_zoned_device $SCRATCH_DEV
+
 echo "Silence is golden."
 
 _scratch_mkfs_xfs >> $seqres.full 2>&1
