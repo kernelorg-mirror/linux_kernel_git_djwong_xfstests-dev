@@ -96,6 +96,13 @@ _require_user
 _require_xfs_quota
 _require_freeze
 
+#
+# The dm-flakey map added by this test doesn't work on zoned devices
+# because table sizes need to be aligned to the zone size.
+#
+_require_non_zoned_device $SCRATCH_DEV
+_require_non_zoned_device $SCRATCH_RTDEV
+
 echo "Silence is golden"
 
 _scratch_mkfs > $seqres.full 2>&1
