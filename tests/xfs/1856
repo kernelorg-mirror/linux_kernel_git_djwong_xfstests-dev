@@ -47,6 +47,12 @@ need_metadir()
 
 	$CAN_METADIR || return 1
 
+	# zoned filesystems always require metadir, and neither can be added to
+	# an existing filesystem.
+	echo "$MKFS_OPTIONS" | grep -E -q 'zoned(,|=1)' && return 0
+	test "$(_zone_type $SCRATCH_DEV)" != "none" && return 0
+	test "$(_zone_type $SCRATCH_RTDEV)" != "none" && return 0
+
 	if rt_configured; then
 		# rt rmap btrees require metadir, but metadir cannot be added
 		# to an existing rt filesystem.  Force it on at mkfs time.
