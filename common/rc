@@ -4536,6 +4536,27 @@ _create_loop_device()
 	echo $dev
 }
 
+# Create a loop device from a given file and configure it to support IOs
+# aligned to the given block size.
+_create_loop_device_blocksize()
+{
+	local file=$1
+	local blksize=$2
+	local dev
+
+	dev=`losetup -f --sector-size=$blksize --show $file` || \
+		_fail "Cannot assign $file to a loop device w/ blocksize $blksize"
+
+	# Try to enable asynchronous directio mode on the loopback device so
+	# that writeback started by a filesystem mounted on the loop device
+	# won't be throttled by buffered writes to the lower filesystem.  This
+	# is a performance optimization for tests that want to write a lot of
+	# data, so it isn't required to work.
+	test -b "$dev" && losetup --direct-io=on $dev 2> /dev/null
+
+	echo $dev
+}
+
 _destroy_loop_device()
 {
 	local dev=$1
