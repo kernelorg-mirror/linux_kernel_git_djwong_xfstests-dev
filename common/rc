@@ -4600,6 +4600,28 @@ _create_loop_device()
 	echo $dev
 }
 
+# Configure the loop device however needed to support the given block size.
+_force_loop_device_blocksize()
+{
+	local loopdev="$1"
+	local blksize="$2"
+	local is_dio
+	local logsec
+
+	if [ ! -b "$loopdev" ] || [ -z "$blksize" ]; then
+		echo "_force_loop_device_blocksize requires loopdev and blksize" >&2
+		return 1
+	fi
+
+	curr_blksize="$(losetup --list --output LOG-SEC --noheadings --raw "$loopdev")"
+	if [ "$curr_blksize" -gt "$blksize" ]; then
+		losetup --direct-io=off "$loopdev"
+		losetup --sector-size "$blksize" "$loopdev"
+	fi
+
+	#losetup --raw --list "$loopdev" >> $seqres.full
+}
+
 _destroy_loop_device()
 {
 	local dev=$1

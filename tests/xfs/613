@@ -169,6 +169,7 @@ do_test "-o attr2" pass "attr2" "true"
 do_test "-o noattr2" pass "attr2" "false"
 
 # Test logbsize=value.
+_force_loop_device_blocksize $loop_dev 512	 # needed for v1 log
 do_mkfs -m crc=0 -l version=1
 # New kernel (refer to 4f62282a3696 xfs: cleanup xlog_get_iclog_buffer_size)
 # prints "logbsize=N" in /proc/mounts, but old kernel not. So the default

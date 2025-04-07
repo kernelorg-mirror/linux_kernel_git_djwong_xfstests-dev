@@ -56,6 +56,7 @@ _grow_loop()
 
 	$XFS_IO_PROG -f -c "truncate $original" $LOOP_IMG
 	loop_dev=`_create_loop_device $LOOP_IMG`
+	_force_loop_device_blocksize $loop_dev $bsize
 
 	dparam=""
 	if [ -n "$agsize" ]; then
@@ -74,6 +75,7 @@ _grow_loop()
 	_destroy_loop_device $loop_dev
 	$XFS_IO_PROG -c "pwrite $new_size $bsize" $LOOP_IMG | _filter_io
 	loop_dev=`_create_loop_device $LOOP_IMG`
+	_force_loop_device_blocksize $loop_dev $bsize
 	echo "*** mount loop filesystem"
 	_mount $loop_dev $LOOP_MNT
 
