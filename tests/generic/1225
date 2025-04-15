@@ -1,0 +1,51 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2025 Oracle.  All Rights Reserved.
+#
+# FS QA Test 1215
+#
+# fio test for large atomic writes
+#
+. ./common/preamble
+_begin_fstest aio rw stress atomicwrites
+
+. ./common/atomicwrites
+
+fio_config=$tmp.fio
+
+_require_scratch
+_require_atomic_write_test_commands
+_require_aio
+_require_odirect
+
+cat >$fio_config <<EOF
+[iops-test]
+directory=${SCRATCH_MNT}
+filesize=1M
+filename=testfile
+rw=write
+bs=16k
+ioengine=libaio
+loops=1000
+numjobs=10
+iodepth=1024
+group_reporting=1
+direct=1
+verify=crc64
+verify_write_sequence=0
+exitall_on_error=1
+atomic=1
+EOF
+
+_require_fio $fio_config
+
+_scratch_mkfs  >> $seqres.full 2>&1
+_scratch_mount
+
+echo "Run fio with large atomic writes"
+cat $fio_config >>  $seqres.full
+run_check $FIO_PROG $fio_config
+
+# success, all done
+status=0
+exit
