@@ -76,6 +76,7 @@ _xfs_verify_metadump_v1()
 
 	# Create loopdev for data device so we can mount the fs
 	METADUMP_DATA_LOOP_DEV=$(_create_loop_device $data_img)
+	_force_loop_device_blocksize $METADUMP_DATA_LOOP_DEV $SCRATCH_DEV
 
 	# Mount fs, run an extra test, fsck, and unmount
 	SCRATCH_DEV=$METADUMP_DATA_LOOP_DEV _scratch_mount
@@ -123,12 +124,19 @@ _xfs_verify_metadump_v2()
 
 	# Create loopdev for data device so we can mount the fs
 	METADUMP_DATA_LOOP_DEV=$(_create_loop_device $data_img)
+	_force_loop_device_blocksize $METADUMP_DATA_LOOP_DEV $SCRATCH_DEV
 
 	# Create loopdev for log device if we recovered anything
-	test -s "$log_img" && METADUMP_LOG_LOOP_DEV=$(_create_loop_device $log_img)
+	if [ -s "$log_img" ]; then
+		METADUMP_LOG_LOOP_DEV=$(_create_loop_device $log_img)
+		_force_loop_device_blocksize $METADUMP_LOG_LOOP_DEV $SCRATCH_LOGDEV
+	fi
 
 	# Create loopdev for rt device if we recovered anything
-	test -s "$rt_img" && METADUMP_RT_LOOP_DEV=$(_create_loop_device $rt_img)
+	if [ -s "$rt_img" ]; then
+		METADUMP_RT_LOOP_DEV=$(_create_loop_device $rt_img)
+		_force_loop_device_blocksize $METADUMP_RT_LOOP_DEV $SCRATCH_RTDEV
+	fi
 
 	# Mount fs, run an extra test, fsck, and unmount
 	SCRATCH_DEV=$METADUMP_DATA_LOOP_DEV SCRATCH_LOGDEV=$METADUMP_LOG_LOOP_DEV SCRATCH_RTDEV=$METADUMP_RT_LOOP_DEV _scratch_mount

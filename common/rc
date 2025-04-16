@@ -4555,6 +4555,8 @@ _create_loop_device()
 }
 
 # Configure the loop device however needed to support the given block size.
+# The first argument is the loop device; the second is either an integer block
+# size, or a different block device whose blocksize we want to match.
 _force_loop_device_blocksize()
 {
 	local loopdev="$1"
@@ -4565,6 +4567,11 @@ _force_loop_device_blocksize()
 	if [ ! -b "$loopdev" ] || [ -z "$blksize" ]; then
 		echo "_force_loop_device_blocksize requires loopdev and blksize" >&2
 		return 1
+	fi
+
+	# second argument is really a bdev; copy its lba size
+	if [ -b "$blksize" ]; then
+		blksize="$(blockdev --getss "${blksize}")"
 	fi
 
 	curr_blksize="$(losetup --list --output LOG-SEC --noheadings --raw "$loopdev")"
