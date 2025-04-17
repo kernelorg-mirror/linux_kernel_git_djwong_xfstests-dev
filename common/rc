@@ -546,6 +546,13 @@ _scratch_unmount()
 	tmpfs)
 		_unmount $SCRATCH_MNT
 		;;
+	ext2|ext3|fuse.ext4|ext4)
+		_unmount $SCRATCH_DEV
+		# stupid hack to wait for fuse2fs to clear
+		while ! $here/src/open_excl $SCRATCH_DEV &>/dev/null; do
+			sleep 0.1
+		done
+		;;
 	*)
 		_unmount $SCRATCH_DEV
 		;;
@@ -693,11 +700,21 @@ _test_mount()
 
 _test_unmount()
 {
-	if [ "$FSTYP" == "overlay" ]; then
+	case "$FSTYP" in
+	overlay)
 		_overlay_test_unmount
-	else
+		;;
+	ext2|ext3|fuse.ext4|ext4)
 		_unmount $TEST_DEV
-	fi
+		# stupid hack to wait for fuse2fs to clear
+		while ! $here/src/open_excl $TEST_DEV &>/dev/null; do
+			sleep 0.1
+		done
+		;;
+	*)
+		_unmount $TEST_DEV
+		;;
+	esac
 }
 
 _test_cycle_mount()
