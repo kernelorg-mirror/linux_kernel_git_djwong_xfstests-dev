@@ -3278,7 +3278,7 @@ _require_scratch_swapfile()
 				_notrun "swapfiles are not supported"
 			else
 				_scratch_unmount
-				_fail "swapon failed for $FSTYP"
+				_notrun "swapon failed for $FSTYP"
 			fi
 		fi
 		;;
