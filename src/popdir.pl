@@ -72,7 +72,14 @@ for ($i = $start; $i <= $end; $i += $incr) {
 	} elsif ($hardlink && $i > $start) {
 		# hardlink everything after the first file
 		$verbose && print "ln $link_fname $fname\n";
-		link $link_fname, $fname;
+		if (not link $link_fname, $fname) {
+			# if hardlink fails, create a new file in case the old
+			# file reached maximum link count
+			$verbose && print "touch $fname\n";
+			open(DONTCARE, ">$fname") or die("touch $fname");
+			close(DONTCARE);
+			$link_fname = $fname;
+		}
 	} elsif (($i % 100) < $file_pct) {
 		# create a file
 		$verbose && print "touch $fname\n";
