@@ -56,7 +56,9 @@ mkdir -p $loop_mnt
 _mount -o loop $fs_img $loop_mnt > /dev/null  2>&1 || \
 	_fail "Couldn't do initial mount"
 
-if ! $here/src/dirstress -c -d $loop_mnt -p 1 -f 400000 -C >$tmp.out 2>&1
+# popdir.pl is much faster than creating 400k file with dirstress
+mkdir "${loop_mnt}/stress.0"
+if ! $here/src/popdir.pl --dir "${loop_mnt}/stress.0" --end 400000 --hardlink --format "XXXXXXXXXXXX.%ld" > $tmp.out 2>&1
 then
     echo "    dirstress failed"
     cat $tmp.out >> $seqres.full
