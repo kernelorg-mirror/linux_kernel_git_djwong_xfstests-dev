@@ -144,7 +144,7 @@ done
 # directories); otherwise e2fsck doesn't check for duplicate filenames.
 echo -e "\n# Checking for duplicate filenames via fsck"
 _scratch_unmount
-if [ "$FSTYP" = ext4 ]; then
+if [[ "$FSTYP" =~ ext4 ]]; then
 	if ! e2fsck -f -y -D $SCRATCH_DEV &>> $seqres.full; then
 		_log_err "filesystem on $SCRATCH_DEV is inconsistent"
 	fi
