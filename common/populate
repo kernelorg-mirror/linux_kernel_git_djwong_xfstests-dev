@@ -21,7 +21,7 @@ _require_populate_commands() {
 		_require_command "$WIPEFS_PROG" "wipefs"
 		_require_command "$XFS_MDRESTORE_PROG" "xfs_mdrestore"
 		;;
-	ext*)
+	ext*|fuse.ext*)
 		_require_command "$DUMPE2FS_PROG" "dumpe2fs"
 		_require_command "$E2IMAGE_PROG" "e2image"
 		;;
@@ -61,7 +61,7 @@ __populate_fail() {
 
 		_scratch_xfs_metadump "$metadump" "${mdargs[@]}"
 		;;
-	ext4)
+	fuseblk.ext[234]|ext4)
 		_scratch_unmount
 		_ext4_metadump "${SCRATCH_DEV}" "$metadump"
 		;;
@@ -978,7 +978,7 @@ _scratch_populate() {
 		_scratch_xfs_populate
 		_scratch_xfs_populate_check
 		;;
-	"ext2"|"ext3"|"ext4")
+	"ext2"|"ext3"|fuseblk.ext[234]|"ext4")
 		_scratch_ext4_populate
 		_scratch_ext4_populate_check
 		;;
@@ -1072,7 +1072,7 @@ _scratch_populate_cache_tag() {
 	fi
 
 	case "${FSTYP}" in
-	"ext4")
+	fuseblk.ext4|"ext4")
 		extra_descr="LOGDEV_SIZE ${logdev_sz}"
 		;;
 	"xfs")
@@ -1095,7 +1095,7 @@ _scratch_populate_restore_cached() {
 		_scratch_xfs_mdrestore "${metadump}"
 		return $?
 		;;
-	"ext2"|"ext3"|"ext4")
+	"ext2"|"ext3"|fuseblk.ext[234]|"ext4")
 		local logdev=none
 		[ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ] && \
 			logdev=$SCRATCH_LOGDEV
@@ -1130,7 +1130,7 @@ _scratch_populate_save_metadump()
 				"$rtdev" compress "${mdargs[@]}"
 		res=$?
 		;;
-	"ext2"|"ext3"|"ext4")
+	"ext2"|"ext3"|fuseblk.ext[234]|"ext4")
 		_ext4_metadump "${SCRATCH_DEV}" "${metadump_file}" compress
 		res=$?
 		;;
@@ -1168,7 +1168,7 @@ _scratch_populate_cached() {
 		_scratch_xfs_populate $@
 		_scratch_xfs_populate_check
 		;;
-	"ext2"|"ext3"|"ext4")
+	"ext2"|"ext3"|fuseblk.ext[234]|"ext4")
 		_scratch_ext4_populate $@
 		_scratch_ext4_populate_check
 		;;
