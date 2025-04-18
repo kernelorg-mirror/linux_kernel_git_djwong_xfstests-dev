@@ -28,7 +28,7 @@ get_supported_bsize()
             fi
         done
         ;;
-    "ext4")
+    "fuse.ext4"|"ext4")
         min_bsize=1024
         max_bsize=$(_get_page_size)
         ;;
@@ -50,7 +50,7 @@ get_mkfs_opts()
     "xfs")
         mkfs_opts="-b size=$bsize"
         ;;
-    "ext4")
+    "fuse.ext4"|"ext4")
         mkfs_opts="-b $bsize"
         ;;
     *)

@@ -26,7 +26,7 @@ btrfs)
 	_require_fs_space $TEST_DIR 3145728
 	fssize=3000
 	;;
-ext4)
+fuse.ext4|ext4)
 	_require_dumpe2fs
 	;;
 xfs)
@@ -65,7 +65,7 @@ get_holes()
 get_free_sectors()
 {
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 	_unmount $loop_mnt
 	$DUMPE2FS_PROG $loop_dev  2>&1 | grep " Free blocks" | cut -d ":" -f2- | \
 		tr ',' '\n' | $SED_PROG 's/^ //' | \

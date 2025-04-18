@@ -36,7 +36,7 @@ do
 	postargs=""	# for any special post-device options
 
 	case "$fs"  in
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext4|ext4)
 		preargs="-F"
 		;;
 	cramfs)

@@ -191,7 +191,7 @@ _require_hw_wrapped_key_support()
 _scratch_mkfs_encrypted()
 {
 	case $FSTYP in
-	ext4|f2fs)
+	fuse.ext4|ext4|f2fs)
 		_scratch_mkfs -O encrypt
 		;;
 	ubifs)
@@ -210,7 +210,7 @@ _scratch_mkfs_encrypted()
 _scratch_mkfs_sized_encrypted()
 {
 	case $FSTYP in
-	ext4|f2fs)
+	fuse.ext4|ext4|f2fs)
 		MKFS_OPTIONS="$MKFS_OPTIONS -O encrypt" _scratch_mkfs_sized $*
 		;;
 	*)
@@ -225,7 +225,7 @@ _scratch_mkfs_sized_encrypted()
 _scratch_mkfs_stable_inodes_encrypted()
 {
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 		if ! _scratch_mkfs -O encrypt -O stable_inodes; then
 			_notrun "-O stable_inodes is not supported"
 		fi
@@ -330,7 +330,7 @@ _num_to_hex()
 _get_fs_keyprefix()
 {
 	case $FSTYP in
-	ext4|f2fs)
+	fuse.ext4|ext4|f2fs)
 		echo $FSTYP
 		;;
 	*)
@@ -557,7 +557,7 @@ _get_encryption_nonce()
 	local inode=$2
 
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 		# Use debugfs to dump the special xattr named "c", which is the
 		# file's fscrypt_context.  This produces a line like:
 		#
@@ -605,7 +605,7 @@ _require_get_encryption_nonce_support()
 {
 	echo "Checking for _get_encryption_nonce() support for $FSTYP" >> $seqres.full
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 		_require_command "$DEBUGFS_PROG" debugfs
 		;;
 	f2fs)
@@ -631,7 +631,7 @@ _get_ciphertext_filename()
 	local dir_inode=$3
 
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 		# Extract the filename from the debugfs output line like:
 		#
 		#  131075  100644 (1)      0      0       0 22-Apr-2019 16:54 \xa2\x85\xb0z\x13\xe9\x09\x86R\xed\xdc\xce\xad\x14d\x19
@@ -685,7 +685,7 @@ _require_get_ciphertext_filename_support()
 {
 	echo "Checking for _get_ciphertext_filename() support for $FSTYP" >> $seqres.full
 	case $FSTYP in
-	ext4)
+	fuse.ext4|ext4)
 		# Verify that the "ls -l -r" debugfs command is supported and
 		# that it hex-encodes non-ASCII characters, rather than using an
 		# ambiguous escaping method.  This requires e2fsprogs v1.45.1 or

@@ -7,6 +7,7 @@ _has_casefold_kernel_support()
 {
 	case $FSTYP in
 	ext4)
+		# fuse2fs does not support casefolding
 		test -f '/sys/fs/ext4/features/casefold'
 		;;
 	f2fs)
