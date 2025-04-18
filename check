@@ -140,12 +140,25 @@ get_sub_group_list()
 	echo $grpl
 }
 
+get_group_dirs()
+{
+	local fsgroup="$FSTYP"
+
+	case "$FSTYP" in
+	ext2|ext3|fuseblk.ext[234])
+		fsgroup=ext4
+		;;
+	esac
+
+	echo $SRC_GROUPS
+	echo $fsgroup
+}
+
 get_group_list()
 {
 	local grp=$1
 	local grpl=""
 	local sub=$(dirname $grp)
-	local fsgroup="$FSTYP"
 
 	if [ -n "$sub" -a "$sub" != "." -a -d "$SRC_DIR/$sub" ]; then
 		# group is given as <subdir>/<group> (e.g. xfs/quick)
@@ -154,10 +167,7 @@ get_group_list()
 		return
 	fi
 
-	if [ "$FSTYP" = ext2 -o "$FSTYP" = ext3 ]; then
-	    fsgroup=ext4
-	fi
-	for d in $SRC_GROUPS $fsgroup; do
+	for d in $(get_group_dirs); do
 		if ! test -d "$SRC_DIR/$d" ; then
 			continue
 		fi
@@ -171,7 +181,7 @@ get_group_list()
 get_all_tests()
 {
 	touch $tmp.list
-	for d in $SRC_GROUPS $FSTYP; do
+	for d in $(get_group_dirs); do
 		if ! test -d "$SRC_DIR/$d" ; then
 			continue
 		fi
@@ -387,7 +397,7 @@ if [ -n "$FUZZ_REWRITE_DURATION" ]; then
 fi
 
 if [ -n "$subdir_xfile" ]; then
-	for d in $SRC_GROUPS $FSTYP; do
+	for d in $(get_group_dirs); do
 		[ -f $SRC_DIR/$d/$subdir_xfile ] || continue
 		for f in `sed "s/#.*$//" $SRC_DIR/$d/$subdir_xfile`; do
 			exclude_tests+=($d/$f)
