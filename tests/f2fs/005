@@ -36,7 +36,7 @@ mv $tmpfile $tmpdir
 # it runs out of free segment
 dd if=/dev/zero of=$testfile bs=1M count=5 conv=notrunc conv=fsync 2>/dev/null
 
-_scratch_mount -o remount,checkpoint=enable
+_scratch_remount checkpoint=enable
 
 # it may hang umount if tmpdir is still dirty during evict()
 _scratch_unmount
