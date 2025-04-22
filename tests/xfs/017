@@ -35,7 +35,7 @@ do
 	FSSTRESS_ARGS=`_scale_fsstress_args -d $SCRATCH_MNT -n 1000`
         _run_fsstress $FSSTRESS_ARGS
 
-        _try_scratch_mount -o remount,ro \
+        _scratch_remount ro \
             || _fail "remount ro failed"
 
         echo ""                                 >>$seqres.full
@@ -49,7 +49,7 @@ do
         echo ""                             >>$seqres.full
         _scratch_xfs_repair -n              >>$seqres.full 2>&1 \
             || _fail "xfs_repair -n failed"
-        _try_scratch_mount -o remount,rw \
+        _scratch_remount rw \
             || _fail "remount rw failed"
 done
 

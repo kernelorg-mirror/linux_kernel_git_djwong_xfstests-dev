@@ -192,11 +192,11 @@ ENDL
 	[ $? -eq 0 ] || echo "mount failed unexpectedly!"
 	_check_mount rw
 
-	_try_scratch_mount -o remount,nobarrier
+	_scratch_remount nobarrier
 	[ $? -eq 0 ] || _fail "remount nobarrier failed"
 	_check_mount rw nobarrier
 
-	_try_scratch_mount -o remount,barrier
+	_scratch_remount barrier
 	[ $? -eq 0 ] || _fail "remount barrier failed"
 	_check_mount rw
 
