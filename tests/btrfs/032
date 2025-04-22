@@ -19,6 +19,6 @@ _scratch_mount "-o flushoncommit"
 
 $XFS_IO_PROG -f -c "pwrite 0 10M" "$SCRATCH_MNT/tmpfile" | _filter_xfs_io
 
-_scratch_mount "-o remount,ro"
+_scratch_remount "ro"
 
 status=0 ; exit
