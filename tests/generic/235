@@ -39,9 +39,9 @@ do_repquota
 # https://bugzilla.redhat.com/show_bug.cgi?id=563267
 #
 # then you need a more recent mount binary.
-_try_scratch_mount "-o remount,ro" 2>&1 | tee -a $seqres.full | _filter_scratch
+_scratch_remount "ro" 2>&1 | tee -a $seqres.full | _filter_scratch
 touch $SCRATCH_MNT/failed 2>&1 | tee -a $seqres.full | _filter_scratch
-_try_scratch_mount "-o remount,rw" 2>&1 | tee -a $seqres.full | _filter_scratch
+_scratch_remount "rw" 2>&1 | tee -a $seqres.full | _filter_scratch
 
 touch $SCRATCH_MNT/testfile2
 chown $qa_user:$qa_user $SCRATCH_MNT/testfile2
