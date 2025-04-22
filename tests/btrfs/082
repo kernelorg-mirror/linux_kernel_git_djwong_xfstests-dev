@@ -25,7 +25,7 @@ _require_scratch
 _scratch_mkfs >$seqres.full 2>&1
 
 _scratch_mount "-o thread_pool=6"
-_scratch_mount "-o remount,thread_pool=10"
+_scratch_remount "thread_pool=10"
 
 echo "Silence is golden"
 status=0
