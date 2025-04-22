@@ -58,7 +58,7 @@ _scratch_xfs_db -x  -c 'sb' -c 'write features2 0'
 # And print the flags after a mount ro and remount rw
 #
 _scratch_mount -o ro
-_scratch_mount -o remount,rw
+_scratch_remount rw
 _scratch_unmount
 rof2=`_scratch_xfs_get_sb_field features2`
 
