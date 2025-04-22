@@ -16,7 +16,7 @@ _require_scratch
 
 _scratch_mkfs > /dev/null 2>&1
 _scratch_mount -o ro
-_scratch_mount -o rw,remount
+_scratch_remount remount
 
 $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap >> $seqres.full 2>&1 \
 	|| _fail "couldn't create snapshot"
