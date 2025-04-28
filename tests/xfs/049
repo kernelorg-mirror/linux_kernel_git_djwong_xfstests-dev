@@ -68,7 +68,7 @@ mkdir $SCRATCH_MNT/test $SCRATCH_MNT/test2 >> $seqres.full 2>&1 \
 
 _log "Mount xfs via loop"
 loop_dev1=$(_create_loop_device $SCRATCH_MNT/test.xfs)
-_mount $loop_dev1 $SCRATCH_MNT/test >> $seqres.full 2>&1 \
+_mount_fstyp $loop_dev1 $SCRATCH_MNT/test >> $seqres.full 2>&1 \
     || _fail "!!! failed to loop mount xfs"
 
 _log "stress"
