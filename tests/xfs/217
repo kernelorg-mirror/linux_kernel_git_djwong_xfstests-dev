@@ -40,7 +40,7 @@ _do_mkfs()
 		echo -n "fssize=${i}g "
 		$MKFS_XFS_PROG -f -b size=4096 -l version=2 \
 			-d size=${i}g $loop_dev $loop_mkfs_opts |grep log
-		_mount $loop_dev $LOOP_MNT
+		_mount_fstyp $loop_dev $LOOP_MNT
 		echo "test write" > $LOOP_MNT/test
 		_unmount $LOOP_MNT > /dev/null 2>&1
 
