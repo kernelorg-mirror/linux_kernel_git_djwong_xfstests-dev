@@ -85,7 +85,7 @@ reset()
 	$XFS_IO_PROG -fc "pwrite 0 $iosize" $SCRATCH_MNT/file \
 		>> $seqres.full 2>&1
 	_unmount $SCRATCH_MNT || _fail "umount failed"
-	_mount $loop_dev $SCRATCH_MNT || _fail "mount failed"
+	_mount_fstyp $loop_dev $SCRATCH_MNT || _fail "mount failed"
 	stat $SCRATCH_MNT/file > /dev/null
 }
 
@@ -100,9 +100,9 @@ _mkfs_dev $loop_dev >> $seqres.full 2>&1
 if [ $FSTYP = "xfs" ]; then
 	# Writes to the quota file are captured in cgroup metrics on XFS, so
 	# we require that quota is not enabled at all.
-	_mount $loop_dev -o noquota $SCRATCH_MNT || _fail "mount failed"
+	_mount_fstyp $loop_dev -o noquota $SCRATCH_MNT || _fail "mount failed"
 else
-	_mount $loop_dev $SCRATCH_MNT || _fail "mount failed"
+	_mount_fstyp $loop_dev $SCRATCH_MNT || _fail "mount failed"
 fi
 
 blksize=$(_get_block_size "$SCRATCH_MNT")
