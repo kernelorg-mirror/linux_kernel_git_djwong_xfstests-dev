@@ -59,7 +59,7 @@ get_holes()
 	# and not the loop device like everything else
 	$XFS_IO_PROG -F -c fiemap $img_file | grep hole | \
 		$SED_PROG 's/.*\[\(.*\)\.\.\(.*\)\].*/\1 \2/'
-	_mount $loop_dev $loop_mnt
+	_mount_fstyp $loop_dev $loop_mnt
 }
 
 get_free_sectors()
@@ -176,7 +176,7 @@ fi
 
 
 _mkfs_dev $loop_dev
-_mount $loop_dev $loop_mnt
+_mount_fstyp $loop_dev $loop_mnt
 
 echo -n "Generating garbage on loop..."
 # Goal is to fill it up, ignore any errors.
