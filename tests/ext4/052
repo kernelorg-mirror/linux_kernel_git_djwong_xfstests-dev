@@ -52,7 +52,7 @@ ${MKFS_PROG} -t ${FSTYP} -b 1024 -N 400020 -O large_dir,^has_journal \
 	     $fs_img 20G >> $seqres.full 2>&1 || _fail "mkfs failed"
 
 mkdir -p $loop_mnt
-_mount -o loop $fs_img $loop_mnt > /dev/null  2>&1 || \
+_mount_fstyp -o loop $fs_img $loop_mnt > /dev/null  2>&1 || \
 	_fail "Couldn't do initial mount"
 
 # popdir.pl is much faster than creating 400k file with dirstress
