@@ -70,7 +70,7 @@ mkdir -p $loop_mnt
 #   Disabling datasum could reduce the margin caused by metadata to minimal
 # - discard
 #   What we're testing
-_mount $(_btrfs_no_v1_cache_opt) -o nodatasum,discard $loop_dev $loop_mnt
+_mount_fstyp $(_btrfs_no_v1_cache_opt) -o nodatasum,discard $loop_dev $loop_mnt
 
 # Craft the following extent layout:
 #         |  BG1 |      BG2        |       BG3            |

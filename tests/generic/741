@@ -36,6 +36,10 @@ _require_dm_target flakey
 [ "$FSTYP" = "btrfs" ] && _fixed_by_kernel_commit 2f1aeab9fca1 \
 			"btrfs: return accurate error code on open failure"
 
+if [[ "$FSTYP" =~ fuse* ]]; then
+	_notrun "fuse filesystems have their own mount error strings"
+fi
+
 _scratch_mkfs >> $seqres.full
 _init_flakey
 _scratch_mount
@@ -46,12 +50,12 @@ mkdir -p $extra_mnt
 
 # Mount must fail because the physical device has a dm created on it.
 # Filters alter the return code of the mount.
-_mount $NON_FLAKEY_DEV $extra_mnt 2>/dev/null && \
+_mount_fstyp $NON_FLAKEY_DEV $extra_mnt 2>/dev/null && \
 	_fail "mount of busy device succeeded"
 
 # Try again with flakey unmounted, must also fail.
 _scratch_unmount
-_mount $NON_FLAKEY_DEV $extra_mnt 2>/dev/null && \
+_mount_fstyp $NON_FLAKEY_DEV $extra_mnt 2>/dev/null && \
 	_fail "mount of busy device succeeded"
 
 # Removing dm should make mount successful.
