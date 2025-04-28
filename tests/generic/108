@@ -72,7 +72,7 @@ _udev_wait /dev/mapper/$vgname-$lvname
 # above vgcreate/lvcreate operations
 _mkfs_dev /dev/mapper/$vgname-$lvname
 
-_mount /dev/mapper/$vgname-$lvname $SCRATCH_MNT
+_mount_fstyp /dev/mapper/$vgname-$lvname $SCRATCH_MNT
 
 # create a test file with contiguous blocks which will span across the 2 disks
 $XFS_IO_PROG -f -c "pwrite 0 16M" -c fsync $SCRATCH_MNT/testfile >>$seqres.full

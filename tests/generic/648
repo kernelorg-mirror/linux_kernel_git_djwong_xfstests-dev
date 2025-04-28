@@ -73,7 +73,7 @@ while _soak_loop_running $((25 * TIME_FACTOR)); do
 	touch $scratch_aliveflag
 	snap_loop_fs >> $seqres.full 2>&1 &
 
-	if ! _mount $loopimg $loopmnt -o loop; then
+	if ! _mount_fstyp $loopimg $loopmnt -o loop; then
 		rm -f $scratch_aliveflag
 		_metadump_dev $loopimg $seqres.loop.$i.md
 		_fail "iteration $SOAK_LOOPIDX loopimg mount failed"
@@ -127,7 +127,7 @@ done
 
 # Make sure the fs image file is ok
 if [ -f "$loopimg" ]; then
-	if _mount $loopimg $loopmnt -o loop; then
+	if _mount_fstyp $loopimg $loopmnt -o loop; then
 		_unmount $loopmnt &> /dev/null
 	else
 		_metadump_dev $DMERROR_DEV $seqres.scratch.final.md

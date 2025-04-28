@@ -68,10 +68,10 @@ _verify_copy()
 	mkdir $target_dir
 
 	loop_dev1=$(_create_loop_device $target)
-	_mount $loop_dev1 $target_dir 2>/dev/null
+	_mount_fstyp $loop_dev1 $target_dir 2>/dev/null
 	if [ $? -ne 0 ]; then
 		echo retrying mount with nouuid option >>$seqres.full
-		_mount -o nouuid $loop_dev1 $target_dir
+		_mount_fstyp -o nouuid $loop_dev1 $target_dir
 		if [ $? -ne 0 ]; then
 			echo mount failed - evil!
 			return
@@ -140,9 +140,9 @@ rmdir $imgs.source_dir 2>/dev/null
 mkdir $imgs.source_dir
 
 loop_dev2=$(_create_loop_device $imgs.source)
-_mount $loop_dev2 $imgs.source_dir
+_mount_fstyp $loop_dev2 $imgs.source_dir
 cp -a $here $imgs.source_dir
-_mount -o remount,ro $loop_dev2 $imgs.source_dir
+_mount_fstyp -o remount,ro $loop_dev2 $imgs.source_dir
 $XFS_COPY_PROG $loop_dev2 $imgs.image 2> /dev/null | _filter_copy '#' $imgs.image '#' '#'
 _verify_copy $imgs.image $imgs.source $imgs.source_dir
 
