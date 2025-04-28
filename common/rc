@@ -446,6 +446,12 @@ _supports_filetype()
 	esac
 }
 
+# Mount with FSTYP explicitly set.
+_mount_fstyp()
+{
+	_mount -t $FSTYP$FUSE_SUBTYP "$@"
+}
+
 # mount scratch device with given options but don't check mount status
 _try_scratch_mount()
 {
@@ -455,7 +461,7 @@ _try_scratch_mount()
 		_overlay_scratch_mount $*
 		return $?
 	fi
-	_mount -t $FSTYP$FUSE_SUBTYP `_scratch_mount_options $*`
+	_mount_fstyp `_scratch_mount_options $*`
 	mount_ret=$?
 	[ $mount_ret -ne 0 ] && return $mount_ret
 	_idmapped_mount $SCRATCH_DEV $SCRATCH_MNT
@@ -715,7 +721,7 @@ _test_mount()
     fi
 
     _test_options mount
-    _mount -t $FSTYP$FUSE_SUBTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
+    _mount_fstyp $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
     mount_ret=$?
     [ $mount_ret -ne 0 ] && return $mount_ret
     _idmapped_mount $TEST_DEV $TEST_DIR
@@ -3539,7 +3545,7 @@ _mount_or_remount_rw()
 
 	if [ $USE_REMOUNT -eq 0 ]; then
 		if [ "$FSTYP" != "overlay" ]; then
-			_mount -t $FSTYP$FUSE_SUBTYP $mount_opts $device $mountpoint
+			_mount_fstyp $mount_opts $device $mountpoint
 			_idmapped_mount $device $mountpoint
 		else
 			_overlay_mount $device $mountpoint

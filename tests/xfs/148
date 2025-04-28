@@ -53,7 +53,7 @@ MKFS_OPTIONS="-m crc=0 -i size=512" _mkfs_dev $loop_dev >> $seqres.full
 
 # Mount image file
 mkdir -p $mntpt
-_mount $loop_dev $mntpt
+_mount_fstyp $loop_dev $mntpt
 
 echo "creating entries" >> $seqres.full
 
@@ -102,7 +102,7 @@ test "$(md5sum < $imgfile)" != "$(md5sum < $imgfile.old)" ||
 	_fail "sed failed to change the image file?"
 
 loop_dev=$(_create_loop_device $imgfile)
-_mount $loop_dev $mntpt
+_mount_fstyp $loop_dev $mntpt
 
 # Try to access the corrupt metadata
 echo "++ ACCESSING BAD METADATA" | tee -a $seqres.full
