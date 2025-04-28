@@ -71,7 +71,7 @@ for ((i=0; i<100; i++)); do
 done &
 pid=$!
 for ((i=0; i<100; i++)); do
-	_mount $lvdev $SCRATCH_MNT >> $seqres.full 2>&1
+	_mount_fstyp $lvdev $SCRATCH_MNT >> $seqres.full 2>&1
 	_unmount $lvdev >> $seqres.full 2>&1
 done &
 pid="$pid $!"

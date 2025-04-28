@@ -40,7 +40,7 @@ _mkfs_dev $SCSI_DEBUG_DEV || _fail "Can't make $FSTYP on scsi_debug device"
 SCSI_DEBUG_MNT="$TEST_DIR/scsi_debug_$seq"
 rm -rf $SCSI_DEBUG_MNT
 mkdir $SCSI_DEBUG_MNT
-run_check _mount $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
+run_check _mount_fstyp $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
 
 echo "DIO read/write 512 bytes"
 # This dio write should succeed, even the physical sector size is 4096, but

@@ -42,7 +42,7 @@ testme() {
 	$MKFS_XFS_PROG "${mkfs_args[@]}" $dummyfile >> $seqres.full || \
 		echo "mkfs.xfs ${mkfs_args[*]} failed?"
 
-	_mount -o loop $dummyfile $dummymnt
+	_mount_fstyp -o loop $dummyfile $dummymnt
 	XFS_SCRUB_PHASE=7 $XFS_SCRUB_PROG -d -o autofsck $dummymnt 2>&1 | \
 		grep autofsck | _filter_test_dir | \
 		sed -e 's/\(directive.\).*$/\1/g'
