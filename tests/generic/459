@@ -113,7 +113,7 @@ _udev_wait /dev/mapper/$vgname-$snapname
 
 # Catch mount failure so we don't blindly go an freeze the root filesystem
 # instead of lvm volume.
-_mount /dev/mapper/$vgname-$snapname $SCRATCH_MNT || _fail "mount failed"
+_mount_fstyp /dev/mapper/$vgname-$snapname $SCRATCH_MNT || _fail "mount failed"
 
 # Consume all space available in the volume and freeze to ensure everything
 # required to make the fs consistent is flushed to disk.

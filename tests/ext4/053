@@ -131,7 +131,7 @@ ok() {
 }
 
 simple_mount() {
-	_mount $* >> $seqres.full 2>&1
+	_mount_fstyp $* >> $seqres.full 2>&1
 }
 
 # $1 - can hold -n option, if it does argumetns are shifted

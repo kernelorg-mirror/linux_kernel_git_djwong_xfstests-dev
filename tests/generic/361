@@ -43,7 +43,7 @@ mkdir -p $fs_mnt
 # mount loop device and create a larger file to hit I/O errors on loop device
 loop_dev=$(_create_loop_device $fs_img)
 _mkfs_dev $loop_dev
-_mount -t $FSTYP $loop_dev $fs_mnt
+_mount_fstyp $loop_dev $fs_mnt
 if [ "$FSTYP" = "xfs" ]; then
 	# Turn off all XFS metadata IO error retries
 	dname=$(_short_dev $loop_dev)

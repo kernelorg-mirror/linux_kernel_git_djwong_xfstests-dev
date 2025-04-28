@@ -37,7 +37,7 @@ run_check _mkfs_dev $SCSI_DEBUG_DEV
 SCSI_DEBUG_MNT="$TEST_DIR/scsi_debug_$seq"
 rm -rf $SCSI_DEBUG_MNT
 mkdir $SCSI_DEBUG_MNT
-run_check _mount $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
+run_check _mount_fstyp $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
 
 # create a test file
 $XFS_IO_PROG -f -c "pwrite 0 1M" $SCSI_DEBUG_MNT/testfile >>$seqres.full

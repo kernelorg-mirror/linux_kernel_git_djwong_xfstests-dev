@@ -65,7 +65,7 @@ group_count=$((limit_groups - 16))
 _mkfs_dev -N $((group_count*inodes_per_group)) -b $blksz \
 	$DMHUGEDISK_DEV $((group_count*group_blocks))
 
-_mount $DMHUGEDISK_DEV $SCRATCH_MNT
+_mount_fstyp $DMHUGEDISK_DEV $SCRATCH_MNT
 
 echo "Initial fs dump" >> $seqres.full
 $DUMPE2FS_PROG -h $DMHUGEDISK_DEV >> $seqres.full 2>&1

@@ -35,7 +35,7 @@ _crashtest()
 	_mkfs_dev $img >> $seqres.full 2>&1
 
 	mkdir -p $mnt
-	_mount $img $mnt
+	_mount_fstyp $img $mnt
 
 	echo $cmd
 
@@ -45,7 +45,7 @@ _crashtest()
 	$here/src/godown -f $mnt
 
 	_unmount $mnt
-	_mount $img $mnt
+	_mount_fstyp $img $mnt
 
 	# We should /never/ see 0xCD in the file, because we wrote that pattern
 	# to the filesystem image to expose stale data.
