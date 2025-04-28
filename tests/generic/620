@@ -42,7 +42,7 @@ chunk_size=128
 
 _dmhugedisk_init $sectors $chunk_size
 _mkfs_dev $DMHUGEDISK_DEV
-_mount $DMHUGEDISK_DEV $SCRATCH_MNT || _fail "mount failed for $DMHUGEDISK_DEV $SCRATCH_MNT"
+_mount_fstyp $DMHUGEDISK_DEV $SCRATCH_MNT || _fail "mount failed for $DMHUGEDISK_DEV $SCRATCH_MNT"
 testfile=$SCRATCH_MNT/testfile-$seq
 
 $XFS_IO_PROG -fc "pwrite -S 0xaa 0 1m" -c "fsync" $testfile | _filter_xfs_io

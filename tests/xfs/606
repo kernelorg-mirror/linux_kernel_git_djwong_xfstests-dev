@@ -40,7 +40,7 @@ $MKFS_XFS_PROG -f $LOOP_IMG >$seqres.full
 $XFS_IO_PROG -f -c "truncate 1073750016" $LOOP_IMG
 
 loop_dev=$(_create_loop_device $LOOP_IMG)
-_mount $loop_dev $LOOP_MNT
+_mount_fstyp $loop_dev $LOOP_MNT
 # A known bug shows "XFS_IOC_FSGROWFSDATA xfsctl failed: No space left on
 # device" at here, refer to _fixed_by_kernel_commit above
 $XFS_GROWFS_PROG $LOOP_MNT >$seqres.full
