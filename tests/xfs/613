@@ -106,7 +106,7 @@ _do_test()
 	local info
 
 	# mount test
-	_mount $loop_dev $LOOP_MNT $opts 2>>$seqres.full
+	_mount_fstyp $loop_dev $LOOP_MNT $opts 2>>$seqres.full
 	rc=$?
 	if [ $rc -eq 0 ];then
 		if [ "${mounted}" = "fail" ];then
