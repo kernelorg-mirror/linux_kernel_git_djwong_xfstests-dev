@@ -34,7 +34,7 @@ mount_nonexistent_mnt()
 {
 	echo "# mount to nonexistent mount point" >>$seqres.full
 	rm -rf $TEST_DIR/nosuchdir
-	_mount $SCRATCH_DEV $TEST_DIR/nosuchdir >>$seqres.full 2>&1
+	_mount_fstyp $SCRATCH_DEV $TEST_DIR/nosuchdir >>$seqres.full 2>&1
 }
 
 # fs driver should be able to handle mounting a free loop device gracefully xfs
@@ -47,7 +47,7 @@ mount_free_loopdev()
 {
 	echo "# mount a free loop device" >>$seqres.full
 	loopdev=`losetup -f`
-	_mount $loopdev $SCRATCH_MNT >>$seqres.full 2>&1
+	_mount_fstyp $loopdev $SCRATCH_MNT >>$seqres.full 2>&1
 	_unmount $SCRATCH_MNT >> /dev/null 2>&1
 }
 
