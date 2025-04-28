@@ -86,7 +86,7 @@ _mkfs_dev /dev/mapper/$vgname-$lvname
 $LVM_PROG lvcreate -s -L 4M -n $snapname $vgname/$lvname >>$seqres.full 2>&1 || \
 	_fail "Failed to create snapshot"
 
-_mount /dev/mapper/$vgname-$snapname $mnt
+_mount_fstyp /dev/mapper/$vgname-$snapname $mnt
 
 # write 5M data to the snapshot
 $XFS_IO_PROG -fc "pwrite 0 5m" -c fsync $mnt/testfile >>$seqres.full 2>&1
