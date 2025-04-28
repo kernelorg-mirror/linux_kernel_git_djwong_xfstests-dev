@@ -170,7 +170,7 @@ $MKFS_XFS_PROG -d "file=1,name=$LOOP_FILE,size=10g" >> $seqres.full 2>&1
 loop_dev=$(_create_loop_device $LOOP_FILE)
 
 mkdir -p $LOOP_MNT
-_mount -o uquota,gquota $loop_dev $LOOP_MNT || \
+_mount_fstyp -o uquota,gquota $loop_dev $LOOP_MNT || \
 	_fail "Failed to mount loop fs."
 
 _test_enospc $LOOP_MNT
