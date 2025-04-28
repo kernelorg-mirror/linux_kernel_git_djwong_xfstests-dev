@@ -77,7 +77,7 @@ _grow_loop()
 	loop_dev=`_create_loop_device $LOOP_IMG`
 	_force_loop_device_blocksize $loop_dev $bsize
 	echo "*** mount loop filesystem"
-	_mount $loop_dev $LOOP_MNT
+	_mount_fstyp $loop_dev $LOOP_MNT
 
 	echo "*** grow loop filesystem"
 	$XFS_GROWFS_PROG $LOOP_MNT 2>&1 |  _filter_growfs 2>&1

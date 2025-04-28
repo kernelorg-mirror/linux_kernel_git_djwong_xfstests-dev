@@ -46,7 +46,7 @@ loop_dev2=`_create_loop_device $fs_img2`
 loop_dev3=`_create_loop_device $fs_img3`
 
 _mkfs_dev -m raid1 -d raid1 $loop_dev1 $loop_dev2 >>$seqres.full 2>&1
-_mount -o ro $loop_dev1 $loop_mnt
+_mount_fstyp -o ro $loop_dev1 $loop_mnt
 
 $BTRFS_UTIL_PROG replace start -B 2 $loop_dev3 $loop_mnt >>$seqres.full 2>&1 && \
 _fail "FAIL: Device replaced on RO btrfs"
