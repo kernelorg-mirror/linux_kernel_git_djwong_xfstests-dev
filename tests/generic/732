@@ -27,6 +27,8 @@ _cleanup()
 _exclude_fs nfs
 _exclude_fs overlay
 _exclude_fs tmpfs
+_exclude_fs fuseblk.ext[234]	# can't mount fuse servers multiple times
+_exclude_fs fuse.ext[234]
 
 _require_test
 _require_scratch
