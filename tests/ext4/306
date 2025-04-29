@@ -39,7 +39,7 @@ fi
 
 blksz=$(_get_page_size)
 
-$MKFS_EXT4_PROG -F -b $blksz -O "$features" $SCRATCH_DEV 512m >> $seqres.full 2>&1
+_scratch_mkfs_sized $((512 * 1048576)) $blksz -O "$features" >> $seqres.full 2>&1
 _scratch_mount
 
 # Create a small non-extent-based file
