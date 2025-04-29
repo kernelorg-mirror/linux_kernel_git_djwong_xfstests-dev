@@ -74,7 +74,7 @@ _scratch_mkfs_ext4_opts()
 
 	_scratch_options mkfs
 
-	echo "$MKFS_EXT4_PROG $SCRATCH_OPTIONS $mkfs_opts"
+	echo "$MKFS_EXT4_PROG -t $FSTYP $SCRATCH_OPTIONS $mkfs_opts"
 }
 
 _scratch_mkfs_ext4()
@@ -85,7 +85,7 @@ _scratch_mkfs_ext4()
 	local mkfs_status
 
 	if [ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ]; then
-		$MKFS_EXT4_PROG -F -O journal_dev $MKFS_OPTIONS $* $SCRATCH_LOGDEV 2>$tmp.mkfserr 1>$tmp.mkfsstd
+		$MKFS_EXT4_PROG -t $FSTYP -F -O journal_dev $MKFS_OPTIONS $* $SCRATCH_LOGDEV 2>$tmp.mkfserr 1>$tmp.mkfsstd
 		mkjournal_status=$?
 
 		if [ $mkjournal_status -ne 0 ]; then
@@ -158,7 +158,7 @@ _ext4_mdrestore()
 		local fsuuid="$($DUMPE2FS_PROG -h "${SCRATCH_DEV}" 2>/dev/null | \
 				grep 'Journal UUID:' | \
 				sed -e 's/Journal UUID:[[:space:]]*//g')"
-		$MKFS_EXT4_PROG -O journal_dev "${logdev}" \
+		$MKFS_EXT4_PROG -t $FSTYP -O journal_dev "${logdev}" \
 				-F -U "${fsuuid}"
 		res=$?
 	fi
@@ -184,7 +184,7 @@ _require_scratch_ext4_feature()
         echo "Usage: _require_scratch_ext4_feature feature"
         _exit 1
     fi
-    $MKFS_EXT4_PROG -F $MKFS_OPTIONS -O "$1" \
+    $MKFS_EXT4_PROG -t $FSTYP -F $MKFS_OPTIONS -O "$1" \
 		    $SCRATCH_DEV 512m >/dev/null 2>&1 \
 	|| _notrun "mkfs.ext4 doesn't support $1 feature"
     _try_scratch_mount >/dev/null 2>&1 \
