@@ -27,6 +27,9 @@ _cleanup()
 _exclude_fs nfs
 _exclude_fs overlay
 _exclude_fs tmpfs
+_exclude_fs fuseblk.ext2
+_exclude_fs fuseblk.ext3
+_exclude_fs fuseblk.ext4
 
 _require_test
 _require_scratch
