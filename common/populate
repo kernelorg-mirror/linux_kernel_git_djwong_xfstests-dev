@@ -942,6 +942,7 @@ __populate_check_ext4_dir() {
 		(test "${inline}" -eq 0 && test "${htree}" -eq 0) || __populate_fail "failed to create ${dtype} dir ino ${inode} htree ${htree} inline ${inline}"
 		;;
 	"htree")
+		_ext4_supports_htree || return 0
 		(test "${inline}" -eq 0 && test "${htree}" -eq 1) || __populate_fail "failed to create ${dtype} dir ino ${inode} htree ${htree} inline ${inline}"
 		;;
 	*)

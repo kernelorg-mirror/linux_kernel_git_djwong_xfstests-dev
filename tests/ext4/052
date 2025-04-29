@@ -29,8 +29,7 @@ _cleanup()
 
 
 # Modify as appropriate.
-_exclude_fs ext2
-_exclude_fs ext3
+_ext4_supports_htree || _notrun "htree not supported on $FSTYP"
 _require_test
 _require_loop
 _require_test_program "dirstress"
