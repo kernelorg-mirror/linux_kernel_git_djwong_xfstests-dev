@@ -16,6 +16,7 @@ _begin_fstest auto quick zone
 . ./common/zoned
 
 _require_scratch
+_require_realtime
 _require_zoned_device $SCRATCH_RTDEV
 _require_command "$BLKZONE_PROG" blkzone
 
