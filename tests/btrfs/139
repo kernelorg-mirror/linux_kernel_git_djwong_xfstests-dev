@@ -34,7 +34,7 @@ _btrfs qgroup limit -e 1G $SUBVOL
 # Write and delete files within 1G limits, multiple times
 for i in $(seq 1 5); do
 	for j in $(seq 1 240); do
-		$XFS_IO_PROG -f -c "pwrite 0 4m" $SUBVOL/file_$j > /dev/null
+		$XFS_IO_PROG -f -c "pwrite -b 1m 0 4m" $SUBVOL/file_$j > /dev/null
 	done
 	rm -f $SUBVOL/file*
 done
