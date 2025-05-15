@@ -21,7 +21,7 @@ _require_test
 _require_aiodio aio-last-ref-held-by-io
 
 testfile=$TEST_DIR/aio-testfile
-$XFS_IO_PROG -ftc "pwrite 0 10m" $testfile | _filter_xfs_io
+$XFS_IO_PROG -ftc "pwrite -b 1m 0 10m" $testfile | _filter_xfs_io
 
 # This can emit cpu affinity setting failures that aren't considered test
 # failures but cause golden image failures. Redirect the test output to
