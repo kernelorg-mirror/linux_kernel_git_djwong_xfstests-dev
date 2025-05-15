@@ -41,9 +41,9 @@ _scratch_mkfs_sized $((256 * 1024 * 1024)) >>$seqres.full 2>&1
 _scratch_mount
 
 echo "Reserve 2M space" >>$seqres.full
-$XFS_IO_PROG -f -c "pwrite 0 2m" $SCRATCH_MNT/testfile >>$seqres.full 2>&1
+$XFS_IO_PROG -f -c "pwrite -b 1m 0 2m" $SCRATCH_MNT/testfile >>$seqres.full 2>&1
 echo "Fulfill the fs" >>$seqres.full
-$XFS_IO_PROG -f -c "pwrite 0 254m" $SCRATCH_MNT/bigfile >>$seqres.full 2>&1
+$XFS_IO_PROG -f -c "pwrite -b 1m 0 254m" $SCRATCH_MNT/bigfile >>$seqres.full 2>&1
 echo "Remove reserved file" >>$seqres.full
 rm -f $SCRATCH_MNT/testfile
 
