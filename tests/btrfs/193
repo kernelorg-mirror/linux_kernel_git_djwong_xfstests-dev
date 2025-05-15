@@ -40,7 +40,7 @@ rm -f "$SCRATCH_MNT/file"
 sync
 
 # We should be able to write at least 3/4 of the limit
-$XFS_IO_PROG -f -c "pwrite 0 192m" "$SCRATCH_MNT/file" | _filter_xfs_io
+$XFS_IO_PROG -f -c "pwrite -b 1m 0 192m" "$SCRATCH_MNT/file" | _filter_xfs_io
 
 # success, all done
 status=0
