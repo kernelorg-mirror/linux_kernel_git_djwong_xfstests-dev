@@ -38,7 +38,7 @@ chmod u+rwx $TFILE
 chmod go-rwx $TFILE
 
 # Try to run out of space so setfacl will fail
-$XFS_IO_PROG -c "pwrite 0 256m" $TFILE >>$seqres.full 2>&1
+$XFS_IO_PROG -c "pwrite -b 1m 0 256m" $TFILE >>$seqres.full 2>&1
 i=1
 
 # Setting acls on an xfs filesystem will succeed even after running out of
