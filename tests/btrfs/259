@@ -21,7 +21,7 @@ _scratch_mount -o compress
 
 # Btrfs uses 128K as max extent size for compressed extents, this would result
 # several compressed extents all at their max size
-$XFS_IO_PROG -f -c "pwrite -S 0xee 0 16m" -c sync \
+$XFS_IO_PROG -f -c "pwrite -S 0xee -b 1m 0 16m" -c sync \
 	$SCRATCH_MNT/foobar >> $seqres.full
 
 old_csum=$(_md5_checksum $SCRATCH_MNT/foobar)
