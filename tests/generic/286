@@ -39,7 +39,7 @@ test01()
 	write_cmd="-c \"truncate 100m\""
 	for i in $(seq 0 5 100); do
 		offset=$(($i * $((1 << 20))))
-		write_cmd="$write_cmd -c \"pwrite $offset 1m\""
+		write_cmd="$write_cmd -c \"pwrite -b 1m $offset 1m\""
 	done
 
 	echo "*** test01() create sparse file ***" >>$seqres.full
@@ -67,7 +67,7 @@ test02()
 	write_cmd="-c \"truncate 200m\""
 	for i in $(seq 0 10 100); do
 		offset=$(($((6 << 20)) + $i * $((1 << 20))))
-		write_cmd="$write_cmd -c \"falloc $offset 3m\" -c \"pwrite $offset 1m\""
+		write_cmd="$write_cmd -c \"falloc $offset 3m\" -c \"pwrite -b 1m $offset 1m\""
 	done
 
 	echo "*** test02() create sparse file ***" >>$seqres.full
@@ -110,7 +110,7 @@ test03()
 	# |data|multiple unwritten_without_data|data| repeat...
 	for i in $(seq 0 60 180); do
 		offset=$(($((20 << 20)) + $i * $((1 << 20))))
-		write_cmd="$write_cmd -c \"pwrite $offset 10m\""
+		write_cmd="$write_cmd -c \"pwrite -b 1m $offset 10m\""
 	done
 
 	echo "*** test03() create sparse file ***" >>$seqres.full
@@ -152,7 +152,7 @@ test04()
 	# |hole|multiple unwritten_without_data|hole|data| repeat...
 	for i in $(seq 30 90 180); do
 		offset=$(($((30 << 20)) + $i * $((1 << 20))))
-		write_cmd="$write_cmd -c \"pwrite $offset 2m\""
+		write_cmd="$write_cmd -c \"pwrite -b 1m $offset 2m\""
 	done
 
 	echo "*** test04() create sparse file ***" >>$seqres.full
