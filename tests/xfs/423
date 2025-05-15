@@ -34,8 +34,8 @@ $here/src/punch-alternating $SCRATCH_MNT/b
 _scratch_sync
 
 echo "Set up delalloc extents"
-$XFS_IO_PROG -c 'pwrite -S 0x66 10m 128k' $SCRATCH_MNT/a >> $seqres.full
-$XFS_IO_PROG -c 'pwrite -S 0x66 10m 128k' $SCRATCH_MNT/b >> $seqres.full
+$XFS_IO_PROG -c 'pwrite -S 0x66 -b 1m 10m 128k' $SCRATCH_MNT/a >> $seqres.full
+$XFS_IO_PROG -c 'pwrite -S 0x66 -b 1m 10m 128k' $SCRATCH_MNT/b >> $seqres.full
 $XFS_IO_PROG -c 'bmap -ev' $SCRATCH_MNT/a $SCRATCH_MNT/b > $SCRATCH_MNT/before
 cat $SCRATCH_MNT/before >> $seqres.full
 
