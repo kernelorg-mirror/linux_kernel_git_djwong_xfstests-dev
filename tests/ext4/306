@@ -60,9 +60,9 @@ df -h $SCRATCH_MNT >> $seqres.full
 
 # See if we can add more blocks to the files
 echo "append 2m to testfile1"
-$XFS_IO_PROG -f $SCRATCH_MNT/testfile1 -c "pwrite 1m 2m" | _filter_xfs_io
+$XFS_IO_PROG -f $SCRATCH_MNT/testfile1 -c "pwrite -b 1m 1m 2m" | _filter_xfs_io
 echo "append 2m to testfile2"
-$XFS_IO_PROG -f $SCRATCH_MNT/testfile1 -c "pwrite 512m 2m" | _filter_xfs_io
+$XFS_IO_PROG -f $SCRATCH_MNT/testfile1 -c "pwrite -b 1m 512m 2m" | _filter_xfs_io
 
 status=0
 exit
