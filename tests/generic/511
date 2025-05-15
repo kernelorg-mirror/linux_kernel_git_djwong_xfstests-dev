@@ -20,7 +20,7 @@ _require_xfs_io_command "fzero"
 _scratch_mkfs_sized $((1024 * 1024 * 256)) >>$seqres.full 2>&1
 _scratch_mount
 
-$XFS_IO_PROG -fc "pwrite 0 256m" -c fsync $SCRATCH_MNT/file >>$seqres.full 2>&1
+$XFS_IO_PROG -fc "pwrite -b 1m 0 256m" -c fsync $SCRATCH_MNT/file >>$seqres.full 2>&1
 rm -f $SCRATCH_MNT/file
 
 cat >> $tmp.fsxops << ENDL
