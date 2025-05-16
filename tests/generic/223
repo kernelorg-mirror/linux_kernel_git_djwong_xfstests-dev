@@ -16,6 +16,10 @@ _begin_fstest auto quick prealloc
 _require_scratch
 _require_xfs_io_command "falloc"
 
+if [[ "$FSTYP" =~ (fuse|fuseblk).ext[234] ]]; then
+	_notrun "fuse2fs does not do stripe-aligned allocation"
+fi
+
 BLOCKSIZE=4096
 
 for SUNIT_K in 8 16 32 64 128; do
