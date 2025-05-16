@@ -1651,6 +1651,13 @@ _repair_test_fs()
 								$tmp.repair 2>&1
 		res=$?
 		;;
+	ext[234])
+		e2fsck -f -y $TEST_DEV >$tmp.repair 2>&1
+		res=$?
+		if test "$res" -lt 4 ; then
+			res=0
+		fi
+		;;
 	*)
 		local fsopts=
 		if [[ "$FSTYP" =~ ext[234]$ ]]; then
