@@ -17,7 +17,7 @@ _exclude_fs ext3
 _fixed_by_kernel_commit b55c3cd102a6 \
 	"ext4: add reserved GDT blocks check"
 
-_require_command "$RESIZE2FS_PROG" resize2fs
+_require_scratch_online_resize
 _require_command "$DEBUGFS_PROG" debugfs
 _require_scratch_size_nocheck $((1024 * 1024))
 
