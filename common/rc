@@ -5907,6 +5907,14 @@ _require_program() {
 	_have_program "$1" || _notrun "$tag required"
 }
 
+_require_scratch_online_resize() {
+	case "$FSTYP" in
+	ext[234])	_require_command "$RESIZE2FS_PROG" resize2fs;;
+	xfs)		_require_command "$XFS_GROWFS_PROG" xfs_growfs;;
+	*)		_notrun "$FSTYP: does not support online resize";;
+	esac
+}
+
 ################################################################################
 # make sure this script returns success
 /bin/true
