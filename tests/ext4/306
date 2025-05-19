@@ -26,6 +26,7 @@ _exclude_fs ext2
 _exclude_fs ext3
 
 _require_scratch
+_require_scratch_online_resize
 _require_command "$RESIZE2FS_PROG" resize2fs
 
 # Make a small ext4 fs with extents disabled & mount it

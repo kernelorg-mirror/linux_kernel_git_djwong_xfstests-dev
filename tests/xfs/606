@@ -25,7 +25,7 @@ _fixed_by_kernel_commit 84712492e6da \
 _require_test
 _require_loop
 _require_xfs_io_command "truncate"
-_require_command "$XFS_GROWFS_PROG" xfs_growfs
+_require_scratch_online_resize
 
 LOOP_IMG=$TEST_DIR/$seq.dev
 LOOP_MNT=$TEST_DIR/$seq.mnt
