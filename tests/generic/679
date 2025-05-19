@@ -24,6 +24,8 @@ _require_xfs_io_command "fiemap"
 #   https://lore.kernel.org/linux-btrfs/20220315164011.GF8241@magnolia/
 #
 _exclude_fs xfs
+_exclude_fs fuseblk.ext[234]	# fuse2fs copies xfs' pattern
+_exclude_fs fuse.ext[234]
 
 rm -f $seqres.full
 
