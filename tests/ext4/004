@@ -45,6 +45,8 @@ workout()
 
 _exclude_fs ext2
 _exclude_fs ext3
+# dump/restore not supported by fuse2fs
+_exclude_fs fuse.ext[234]
 
 _require_test
 _require_scratch
