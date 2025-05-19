@@ -84,10 +84,18 @@ workout()
 
 # main
 DIR_NUM=65537
-DIR_LEN=( $SHORT_DIR $LONG_DIR )
+DIR_LEN=( $SHORT_DIR )
+# fuse2fs doesn't actually write htree indices to large directories, which
+# means this test becomes excruciatingly slow when the dirent names are long.
+# Skip the test to reduce the runtime from ~3.5h to about 15 minutes.
+if [[ ! "$FSTYP" =~ fuse* ]]; then
+	DIR_LEN+=( $LONG_DIR )
+fi
 PARENT_DIR="$SCRATCH_MNT/subdir"
 
-for ((i = 0; i < 2; i++)); do
+echo "${DIR_LEN[*]}" >> $seqres.full
+
+for ((i = 0; i < ${#DIR_LEN[@]}; i++)); do
        workout $DIR_NUM ${DIR_LEN[$i]} $PARENT_DIR
 done
 
