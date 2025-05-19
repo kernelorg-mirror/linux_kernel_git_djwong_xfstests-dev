@@ -19,7 +19,7 @@ _require_defrag()
 	$XFS_IO_PROG -f -c "pwrite -b $bsize 0 $bsize" $testfile > /dev/null
 	cp $testfile $donorfile
 	echo $testfile | $here/src/e4compact -v -f $donorfile | \
-		grep -q "err:95"
+		grep -q -E "err:(95|25)"
 	if [ $? -eq 0 ]; then
 		rm -f $testfile $donorfile 2>&1 > /dev/null
 		_notrun "$FSTYP test filesystem doesn't support online defrag"
