@@ -27,6 +27,11 @@ _cleanup()
 _exclude_fs ext2
 _exclude_fs ext3
 
+# no online resize support in fuse2fs
+_exclude_fs fuse.ext4
+_exclude_fs fuse.ext3
+_exclude_fs fuse.ext2
+
 _require_scratch_nocheck
 _require_dmhugedisk
 _require_dumpe2fs
