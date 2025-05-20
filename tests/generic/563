@@ -34,6 +34,8 @@ _cleanup()
 _require_scratch_nocheck
 _require_cgroup2 io
 _require_loop
+[[ "$FSTYP" =~ fuse* ]] && \
+	_notrun "fuse doesn't support cgroup writeback accounting"
 
 # cgroup v2 writeback is only support on block devices so far
 _require_block_device $SCRATCH_DEV
