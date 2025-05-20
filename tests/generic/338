@@ -36,7 +36,7 @@ _dmerror_init
 
 # Use strictatime mount option here to force atime updates, which could help
 # trigger the NULL pointer dereference on ext4 more easily
-_dmerror_mount "-o strictatime"
+_dmerror_mount "-o strictatime" || _notrun "could not mount with strictatime"
 _dmerror_load_error_table
 
 # flush dmerror block device buffers and drop all caches, force reading from
