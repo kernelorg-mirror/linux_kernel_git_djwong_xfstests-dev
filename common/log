@@ -228,7 +228,7 @@ _scratch_dump_log()
 	f2fs)
 		$DUMP_F2FS_PROG $SCRATCH_DEV
 		;;
-	fuseblk.ext[234]|ext4)
+	fuseblk.ext[234]|fuse.ext[234]|ext4)
 		$DEBUGFS_PROG -R "logdump -a" $SCRATCH_DEV
 		;;
 	*)
@@ -245,7 +245,7 @@ _test_dump_log()
 	f2fs)
 		$DUMP_F2FS_PROG $TEST_DEV
 		;;
-	fuseblk.ext[234]|ext4)
+	fuseblk.ext[234]|fuse.ext[234]|ext4)
 		$DEBUGFS_PROG -R "logdump -a" $TEST_DEV
 		;;
 	*)
@@ -262,7 +262,7 @@ _print_logstate()
     f2fs)
         dirty=$(_scratch_f2fs_logstate)
         ;;
-    fuseblk.ext[234]|ext4)
+    fuseblk.ext[234]|fuse.ext[234]|ext4)
         dirty=$(_scratch_ext4_logstate)
         ;;
     *)
@@ -531,7 +531,7 @@ _require_logstate()
             _notrun "This test requires dump.f2fs utility."
         fi
         ;;
-    fuseblk.ext[234]|ext4)
+    fuseblk.ext[234]|fuse.ext[234]|ext4)
 	if [ -z "$DUMPE2FS_PROG" ]; then
 		_notrun "This test requires dumpe2fs utility."
 	fi
@@ -599,7 +599,7 @@ _get_log_configs()
     f2fs)
         _f2fs_log_config
         ;;
-    fuseblk.ext[234]|ext4)
+    fuseblk.ext[234]|fuse.ext[234]|ext4)
         _ext4_log_config
         ;;
     *)
