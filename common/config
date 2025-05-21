@@ -378,7 +378,7 @@ _common_mount_opts()
 	overlay)
 		echo $OVERLAY_MOUNT_OPTIONS
 		;;
-	fuseblk.ext[234])
+	fuseblk.ext[234]|fuse.ext[234])
 		# fuse sets up secure defaults, so we must explicitly tell
 		# fuse2fs to use the more relaxed kernel access behaviors.
 		echo "-o kernel $EXT_MOUNT_OPTIONS"
@@ -469,7 +469,7 @@ _mkfs_opts()
 _fsck_opts()
 {
 	case $FSTYP in
-	ext2|ext3|fuseblk.ext[234]|ext4)
+	ext2|ext3|fuseblk.ext[234]|fuse.ext[234]|ext4)
 		export FSCK_OPTIONS="-nf"
 		;;
 	reiser*)
@@ -511,7 +511,7 @@ _source_specific_fs()
 
 		. ./common/btrfs
 		;;
-	fuseblk.ext[234]|ext4)
+	fuseblk.ext[234]|fuse.ext[234]|ext4)
 		[ "$MKFS_EXT4_PROG" = "" ] && _fatal "mkfs.ext4 not found"
 		. ./common/ext4
 		;;
