@@ -6,7 +6,7 @@
 _has_casefold_kernel_support()
 {
 	case $FSTYP in
-	fuseblk.ext[234])
+	fuseblk.ext[234]|fuse.ext[234])
 		# fuse2fs does not support casefolding
 		false
 		;;
