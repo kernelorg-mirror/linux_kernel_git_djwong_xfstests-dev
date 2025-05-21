@@ -12,8 +12,8 @@ _require_quota()
     [ -n "$QUOTA_PROG" ] || _notrun "Quota user tools not installed"
 
     case $FSTYP in
-    fuseblk.ext[234])
-	    _notrun "quota not supported on fuseblk.ext[234]"
+    fuseblk.ext[234]|fuse.ext[234])
+	    _notrun "quota not supported on fuseblk.ext[234]|fuse.ext[234]"
 	    ;;
     ext2|ext3|ext4|f2fs)
 	if [ ! -d /proc/sys/fs/quota ]; then
@@ -166,8 +166,8 @@ _require_getnextquota()
 _scratch_enable_pquota()
 {
 	case $FSTYP in
-	fuseblk.ext[234])
-		_notrun "fuseblk.ext[234] doesn't support project quota"
+	fuseblk.ext[234]|fuse.ext[234])
+		_notrun "fuseblk.ext[234]|fuse.ext[234] doesn't support project quota"
 		;;
 	ext2|ext3|ext4)
 		tune2fs -O quota,project $SCRATCH_DEV >>$seqres.full 2>&1
@@ -341,8 +341,8 @@ _check_quota_usage()
 
 	VFS_QUOTA=0
 	case $FSTYP in
-	fuseblk.ext[234])
-		echo "fuseblk.ext[234] doesn't support quota"
+	fuseblk.ext[234]|fuse.ext[234])
+		echo "fuseblk.ext[234]|fuse.ext[234] doesn't support quota"
 		;;
 	ext2|ext3|ext4|f2fs|gfs2|bcachefs)
 		VFS_QUOTA=1

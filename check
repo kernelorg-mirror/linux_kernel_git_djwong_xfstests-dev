@@ -145,7 +145,7 @@ get_group_dirs()
 	local fsgroup="$FSTYP"
 
 	case "$FSTYP" in
-	ext2|ext3|fuseblk.ext[234])
+	ext2|ext3|fuseblk.ext[234]|fuse.ext[234])
 		fsgroup=ext4
 		;;
 	esac
