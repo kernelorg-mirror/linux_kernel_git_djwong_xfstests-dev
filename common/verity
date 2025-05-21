@@ -198,7 +198,7 @@ _require_fsverity_corruption()
 _scratch_mkfs_verity()
 {
 	case $FSTYP in
-	fuseblk.ext[234]|ext4|f2fs)
+	fuseblk.ext[234]|fuse.ext[234]|ext4|f2fs)
 		_scratch_mkfs -O verity
 		;;
 	btrfs)
@@ -216,7 +216,7 @@ _scratch_mkfs_verity()
 _scratch_mkfs_encrypted_verity()
 {
 	case $FSTYP in
-	fuseblk.ext[234]|ext4)
+	fuseblk.ext[234]|fuse.ext[234]|ext4)
 		_scratch_mkfs -O encrypt,verity
 		;;
 	f2fs)
@@ -386,7 +386,7 @@ _fsv_scratch_corrupt_merkle_tree()
 	local offset=$2
 
 	case $FSTYP in
-	fuseblk.ext[234]|ext4|f2fs)
+	fuseblk.ext[234]|fuse.ext[234]|ext4|f2fs)
 		# ext4 and f2fs store the Merkle tree after the file contents
 		# itself, starting at the next 65536-byte aligned boundary.
 		(( offset += ($(_get_filesize $file) + 65535) & ~65535 ))
@@ -417,7 +417,7 @@ _fsv_scratch_corrupt_merkle_tree()
 _require_fsverity_max_file_size_limit()
 {
 	case $FSTYP in
-	btrfs|fuseblk.ext[234]|ext4|f2fs)
+	btrfs|fuseblk.ext[234]|fuse.ext[234]|ext4|f2fs)
 		;;
 	*)
 		_notrun "$FSTYP does not store verity data past EOF; no special file size limit"
