@@ -1842,7 +1842,7 @@ _do()
 #
 _exclude_fs()
 {
-	[ "$1" = "$FSTYP" ] && \
+	[[ $FSTYP =~ $1 ]] && \
 		_notrun "not suitable for this filesystem type: $FSTYP"
 }
 
