@@ -17,6 +17,7 @@ _begin_fstest mkfs auto quick
 _exclude_fs ext2
 _exclude_fs ext3
 _exclude_fs ext4
+_exclude_fs fuse.ext[234]
 _exclude_fs jfs
 _exclude_fs ocfs2
 _exclude_fs udf
