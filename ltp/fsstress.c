@@ -1049,8 +1049,21 @@ check_cwd(void)
 
 	ret = stat64(".", &statbuf);
 	if (ret != 0) {
+		int error = errno;
+
 		fprintf(stderr, "fsstress: check_cwd stat64() returned %d with errno: %d (%s)\n",
-			ret, errno, strerror(errno));
+			ret, error, strerror(error));
+
+		/*
+		 * The current working directory is pinned in memory, which
+		 * means that stat should not have had to do any disk accesses
+		 * to retrieve stat information.  Treat an EIO as an indication
+		 * that the filesystem shut down and exit instead of dumping
+		 * core like the abort() below does.
+		 */
+		if (error == EIO)
+			exit(1);
+
 		goto out;
 	}
 
