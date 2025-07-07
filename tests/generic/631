@@ -64,6 +64,26 @@ stop_workers() {
 	done
 }
 
+require_overlayfs() {
+	local tag="check"
+	local mergedir="$SCRATCH_MNT/merged$tag"
+	local l="lowerdir=$SCRATCH_MNT/lowerdir:$SCRATCH_MNT/lowerdir1"
+	local u="upperdir=$SCRATCH_MNT/upperdir$tag"
+	local w="workdir=$SCRATCH_MNT/workdir$tag"
+	local i="index=off"
+
+	rm -rf $SCRATCH_MNT/merged$tag
+	rm -rf $SCRATCH_MNT/upperdir$tag
+	rm -rf $SCRATCH_MNT/workdir$tag
+	mkdir $SCRATCH_MNT/merged$tag
+	mkdir $SCRATCH_MNT/workdir$tag
+	mkdir $SCRATCH_MNT/upperdir$tag
+
+	_mount -t overlay overlay -o "$l,$u,$w,$i" $mergedir || \
+		_notrun "cannot mount overlayfs"
+	umount $mergedir
+}
+
 worker() {
 	local tag="$1"
 	local mergedir="$SCRATCH_MNT/merged$tag"
@@ -90,6 +110,8 @@ worker() {
 	done
 	rm -f $SCRATCH_MNT/workers/$tag
 }
+
+require_overlayfs
 
 for i in $(seq 0 $((4 + LOAD_FACTOR)) ); do
 	worker $i &
