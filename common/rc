@@ -364,6 +364,30 @@ _clear_mount_stack()
 	MOUNTED_POINT_STACK=""
 }
 
+# Check that this filesystem supports stack mounts
+_require_mount_stack()
+{
+	case "$FSTYP" in
+	fuse.ext[234])
+		# _get_mount depends on the ability for commands such as
+		# "mount /dev/sda /a/second/mountpoint -o per_mount_opts" to
+		# succeed when /dev/sda is already mounted elsewhere.
+		#
+		# The kernel isn't going to notice that /dev/sda is already
+		# mounted, so the mount(8) call won't do the right thing even
+		# if per_mount_opts match the existing mount options.
+		#
+		# If per_mount_opts doesn't match, we'd have to convey the new
+		# per-mount options to the kernel.  In theory we could make the
+		# fuse2fs argument parsing even more complex to support this
+		# use case, but for now fuse2fs doesn't know how to do that.
+		_notrun "fuse2fs servers do not support stacking mounts"
+		;;
+	*)
+		;;
+	esac
+}
+
 _scratch_options()
 {
     SCRATCH_OPTIONS=""
