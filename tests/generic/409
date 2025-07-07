@@ -39,6 +39,7 @@ _cleanup()
 _require_test
 _require_scratch
 _require_local_device $SCRATCH_DEV
+_require_mount_stack
 
 fs_stress()
 {
