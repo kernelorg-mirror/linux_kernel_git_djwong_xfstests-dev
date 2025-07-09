@@ -28,6 +28,7 @@ _require_test_program "af_unix"
 _require_statx
 _require_symlinks
 _require_mknod
+_require_hardlinks
 
 function check_stat () {
 	$here/src/stat_test $* || echo stat_test failed
