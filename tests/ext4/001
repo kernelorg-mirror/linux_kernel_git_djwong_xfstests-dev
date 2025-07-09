@@ -19,6 +19,7 @@ _exclude_fs ext3
 
 _require_xfs_io_command "falloc"
 _require_xfs_io_command "fzero"
+_require_xfs_io_command "fiemap"
 _require_test
 
 # Select appropriate golden output based on mount options
