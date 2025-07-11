@@ -89,6 +89,10 @@ _require_xfs_io_command "syncfs"
 # test that timestamp updates aren't persisted when they shouldn't be.
 
 _scratch_mkfs &>> $seqres.full
+_try_scratch_mount -o strictatime || _notrun "strictatime not supported"
+_scratch_unmount
+_try_scratch_mount -o lazytime || _notrun "lazytime not supported"
+_scratch_unmount
 _scratch_mount
 
 # Create the test file for which we'll update and check the timestamps.
