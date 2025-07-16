@@ -47,6 +47,10 @@ elif [ "$FSTYP" = "btrfs" ]; then
 	# it can be treated as "nojournal".
 	features="nojournal"
 fi
+if [[ "$FSTYP" =~ (fuse|fuseblk).ext[234] ]]; then
+	# fuse2fs doesn't have stable output, skip this test...
+	_notrun "fuse doesn't have stable output"
+fi
 _link_out_file "$features"
 
 _scratch_mkfs >/dev/null 2>&1
