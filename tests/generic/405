@@ -36,7 +36,7 @@ _dmthin_init $BACKING_SIZE $VIRTUAL_SIZE
 # try mkfs on dmthin device, expect mkfs failure if 1M isn't big enough to hold
 # all the metadata. But if mkfs returns success, we expect the filesystem is
 # consistent, make sure it doesn't currupt silently.
-$MKFS_PROG -t $FSTYP $DMTHIN_VOL_DEV >>$seqres.full 2>&1
+yes | $MKFS_PROG -t $FSTYP $DMTHIN_VOL_DEV >>$seqres.full 2>&1
 if [ $? -eq 0 ]; then
 	_dmthin_check_fs
 fi
