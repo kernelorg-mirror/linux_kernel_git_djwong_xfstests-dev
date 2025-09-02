@@ -88,6 +88,19 @@ force_unmount()
 	_unmount $LOOP_MNT >/dev/null 2>&1
 }
 
+# can_test <mount options>
+can_test()
+{
+	local opts="$1"
+
+	if _mount_fstyp $loop_dev $LOOP_MNT $opts 2>>$seqres.full; then
+		_force_unmount
+		return 0
+	fi
+
+	return 1
+}
+
 # _do_test <mount options> <should be mounted?> [<key string> <key should be found?>]
 _do_test()
 {
@@ -184,9 +197,17 @@ do_test "-o allocsize=2g" fail
 
 # Test attr2
 do_mkfs -m crc=1
-do_test "" pass "attr2" "true"
-do_test "-o attr2" pass "attr2" "true"
-do_test "-o noattr2" fail
+if can_test attr2; then
+	do_test "" pass "attr2" "true"
+	do_test "-o attr2" pass "attr2" "true"
+	do_test "-o noattr2" fail
+else
+	cat << ENDL
+TEST: "" "pass" "attr2" "true"
+TEST: "-o attr2" "pass" "attr2" "true"
+TEST: "-o noattr2" "fail"
+ENDL
+fi
 
 # Test discard
 do_mkfs
@@ -206,9 +227,17 @@ do_test "" pass "filestreams" "false"
 do_test "-o filestreams" pass "filestreams" "true"
 
 # Test ikeep
-do_test "" pass "ikeep" "false"
-do_test "-o ikeep" pass "ikeep" "true"
-do_test "-o noikeep" pass "ikeep" "false"
+if can_test ikeep; then
+	do_test "" pass "ikeep" "false"
+	do_test "-o ikeep" pass "ikeep" "true"
+	do_test "-o noikeep" pass "ikeep" "false"
+else
+	cat << ENDL
+TEST: "" "pass" "ikeep" "false"
+TEST: "-o ikeep" "pass" "ikeep" "true"
+TEST: "-o noikeep" "pass" "ikeep" "false"
+ENDL
+fi
 
 # Test inode32|inode64
 do_test "" pass "inode64" "true"

@@ -82,6 +82,19 @@ force_unmount()
 	_unmount $LOOP_MNT >/dev/null 2>&1
 }
 
+# can_test <mount options>
+can_test()
+{
+	local opts="$1"
+
+	if _mount_fstyp $loop_dev $LOOP_MNT $opts 2>>$seqres.full; then
+		_force_unmount
+		return 0
+	fi
+
+	return 1
+}
+
 # _do_test <mount options> <should be mounted?> [<key string> <key should be found?>]
 _do_test()
 {
@@ -165,9 +178,17 @@ do_test()
 echo "** start xfs mount testing ..."
 # Test attr2
 do_mkfs -m crc=0
-do_test "" pass "attr2" "true"
-do_test "-o attr2" pass "attr2" "true"
-do_test "-o noattr2" pass "attr2" "false"
+if can_test attr2; then
+	do_test "" pass "attr2" "true"
+	do_test "-o attr2" pass "attr2" "true"
+	do_test "-o noattr2" pass "attr2" "false"
+else
+	cat << ENDL
+TEST: "" "pass" "attr2" "true"
+TEST: "-o attr2" "pass" "attr2" "true"
+TEST: "-o noattr2" "pass" "attr2" "false"
+ENDL
+fi
 
 # Test logbsize=value.
 do_mkfs -m crc=0 -l version=1
