@@ -125,13 +125,15 @@ _scratch_fuzz_modify >> $ROUND2_LOG 2>&1
 echo "++ unmount" >> $ROUND2_LOG
 umount "${SCRATCH_MNT}" >> $ROUND2_LOG 2>&1
 
+echo "======= round2" >> $seqres.full
 cat "$ROUND2_LOG" >> $seqres.full
+echo "=======" >> $seqres.full
 
 echo "++ check fs (2)" >> $seqres.full
 _check_scratch_fs >> $seqres.full 2>&1
 
 grep -E -q '(did not fix|makes no progress)' $seqres.full && echo "e2fsck failed" | tee -a $seqres.full
-if [ "$(wc -l < "$ROUND2_LOG")" -ne 7 ]; then
+if [ "$(grep -v '^++' "$ROUND2_LOG" | wc -l)" -gt 0 ]; then
 	echo "e2fsck did not fix everything" | tee -a $seqres.full
 fi
 echo "finished fuzzing" | tee -a "$seqres.full"
