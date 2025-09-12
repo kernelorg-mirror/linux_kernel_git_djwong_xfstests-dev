@@ -45,7 +45,8 @@ for i in `seq 1 $((nr_groups * 8))`; do
 done
 blksz="$(stat -f -c '%s' "${SCRATCH_MNT}")"
 freeblks="$(stat -f -c '%a' "${SCRATCH_MNT}")"
-$XFS_IO_PROG -f -c "falloc 0 $((blksz * freeblks))" "${SCRATCH_MNT}/bigfile2" >> $seqres.full
+fallocblks=$((freeblks * 95 / 100))
+$XFS_IO_PROG -f -c "falloc 0 $((blksz * fallocblks))" "${SCRATCH_MNT}/bigfile2" >> $seqres.full
 umount "${SCRATCH_MNT}"
 
 echo "+ make some files"
@@ -67,7 +68,9 @@ _scratch_mount
 
 echo "+ modify files"
 b_bytes="$(stat -c '%B' "${SCRATCH_MNT}/bigfile")"
-$XFS_IO_PROG -f -c "falloc 0 $((blksz * freeblks))" "${SCRATCH_MNT}/bigfile" >> $seqres.full 2> /dev/null
+freeblks="$(stat -f -c '%a' "${SCRATCH_MNT}")"
+fallocblks=$((freeblks * 95 / 100))
+$XFS_IO_PROG -f -c "falloc 0 $((blksz * fallocblks))" "${SCRATCH_MNT}/bigfile" >> $seqres.full 2> /dev/null
 after="$(stat -c '%b' "${SCRATCH_MNT}/bigfile")"
 echo "$((after * b_bytes))" lt "$((blksz * freeblks / 4))" >> $seqres.full
 test "$((after * b_bytes))" -lt "$((blksz * freeblks / 4))" || _fail "falloc should fail"
@@ -80,7 +83,9 @@ echo "+ mount image (2)"
 _scratch_mount
 
 echo "+ modify files (2)"
-$XFS_IO_PROG -f -c "falloc 0 $((blksz * freeblks))" "${SCRATCH_MNT}/bigfile" >> $seqres.full
+freeblks="$(stat -f -c '%a' "${SCRATCH_MNT}")"
+fallocblks=$((freeblks * 95 / 100))
+$XFS_IO_PROG -f -c "falloc 0 $((blksz * fallocblks))" "${SCRATCH_MNT}/bigfile" >> $seqres.full
 umount "${SCRATCH_MNT}"
 
 echo "+ check fs (2)"
