@@ -3266,9 +3266,6 @@ _require_scratch_swapfile()
 	# ext* has supported all variants of swap files since their
 	# introduction, so swapon should not fail.
 	case "$FSTYP" in
-	fuseblk.ext[234]|fuse.ext[234])
-		_notrun "swapon failed for $FSTYP"
-		;;
 	ext2|ext3|ext4)
 		if ! swapon "$SCRATCH_MNT/swap" >/dev/null 2>&1; then
 			if _check_s_dax "$SCRATCH_MNT/swap" 1 >/dev/null; then
