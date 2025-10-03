@@ -372,7 +372,7 @@ _scratch_options()
     "xfs")
 	_scratch_xfs_options "$@"
 	;;
-    ext2|ext3|ext4)
+    ext2|ext3|fuse.ext[234]|ext4)
 	_scratch_ext4_options "$@"
 	;;
     esac
@@ -430,7 +430,7 @@ _supports_filetype()
 	xfs)
 		_xfs_has_feature $dir ftype
 		;;
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext[234]|ext4)
 		local dev=`$DF_PROG $dir | tail -1 | $AWK_PROG '{print $1}'`
 		tune2fs -l $dev | grep -q filetype
 		;;
@@ -845,7 +845,7 @@ _metadump_dev() {
 	btrfs)
 		_btrfs_metadump $device $dumpfile
 		;;
-	ext*)
+	ext*|fuse.ext*)
 		_ext4_metadump $device $dumpfile $compressopt
 		;;
 	xfs)
@@ -897,7 +897,7 @@ _test_mkfs()
     btrfs)
         $MKFS_BTRFS_PROG $MKFS_OPTIONS $* $TEST_DEV > /dev/null
 	;;
-    ext2|ext3|ext4)
+    ext2|ext3|fuse.ext[234]|ext4)
 	$MKFS_PROG -t $FSTYP -- -F $MKFS_OPTIONS $* $TEST_DEV
 	;;
     f2fs)
@@ -946,7 +946,7 @@ _try_mkfs_dev()
     btrfs)
         $MKFS_BTRFS_PROG $MKFS_OPTIONS $*
 	;;
-    ext2|ext3|ext4)
+    ext2|ext3|fuse.ext[234]|ext4)
 	$MKFS_PROG -t $FSTYP -- -F $MKFS_OPTIONS $*
 	;;
     f2fs)
@@ -1021,7 +1021,7 @@ _scratch_mkfs()
 		$UBIUPDATEVOL_PROG ${SCRATCH_DEV} -t
 		return 0
 		;;
-	ext4)
+	ext4|fuse.ext4)
 		_scratch_mkfs_ext4 $*
 		return $?
 		;;
@@ -1037,7 +1037,7 @@ _scratch_mkfs()
 		mkfs_cmd="$MKFS_BTRFS_PROG"
 		mkfs_filter="cat"
 		;;
-	ext3)
+	ext3|fuse.ext3)
 		mkfs_cmd="$MKFS_PROG -t $FSTYP -- -F"
 		mkfs_filter="grep -v -e ^Warning: -e \"^mke2fs \""
 
@@ -1046,7 +1046,7 @@ _scratch_mkfs()
 		$mkfs_cmd -O journal_dev $MKFS_OPTIONS $SCRATCH_LOGDEV && \
 		mkfs_cmd="$mkfs_cmd -J device=$SCRATCH_LOGDEV"
 		;;
-	ext2)
+	ext2|fuse.ext2)
 		mkfs_cmd="$MKFS_PROG -t $FSTYP -- -F"
 		mkfs_filter="grep -v -e ^Warning: -e \"^mke2fs \""
 		;;
@@ -1287,7 +1287,7 @@ _try_scratch_mkfs_sized()
 	btrfs)
 		def_blksz=`echo $MKFS_OPTIONS | sed -rn 's/.*-s ?+([0-9]+).*/\1/p'`
 		;;
-	ext2|ext3|ext4|reiser4|ocfs2)
+	ext2|ext3|fuse.ext[234]|ext4|reiser4|ocfs2)
 		def_blksz=`echo $MKFS_OPTIONS | sed -rn 's/.*-b ?+([0-9]+).*/\1/p'`
 		;;
 	udf)
@@ -1356,7 +1356,7 @@ _try_scratch_mkfs_sized()
 				-b size=$blocksize "$@"
 		fi
 		;;
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext[234]|ext4)
 		# Can't use _scratch_mkfs_ext4 here because the block count has
 		# to come after the device path.
 		if [ "$USE_EXTERNAL" = yes -a ! -z "$SCRATCH_LOGDEV" ]; then
@@ -1457,7 +1457,7 @@ _scratch_mkfs_geom()
 		MKFS_OPTIONS+=" -d su=$sunit_bytes,sw=$swidth_mult"
 	fi
 	;;
-    ext4)
+    fuse.ext4|ext4)
 	MKFS_OPTIONS+=" -b $blocksize -E stride=$sunit_blocks,stripe_width=$swidth_blocks"
 	;;
     *)
@@ -1494,7 +1494,7 @@ _scratch_mkfs_blocksized()
 	xfs)
 		_try_scratch_mkfs_xfs $MKFS_OPTIONS -b size=$blocksize
 		;;
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext[234]|ext4)
 		_scratch_mkfs_ext4 $MKFS_OPTIONS -b $blocksize
 		;;
 	gfs2)
@@ -2174,10 +2174,10 @@ _require_scratch_size_nocheck()
 _require_scratch_16T_support()
 {
 	case $FSTYP in
-	ext2|ext3|f2fs)
+	ext2|ext3|f2fs|fuse.ext[23])
 		_notrun "$FSTYP doesn't support >16T filesystem"
 		;;
-	ext4)
+	fuse.ext4|ext4)
 		_scratch_mkfs >> $seqres.full 2>&1
 		_scratch_mount
 		local blocksize=$(_get_block_size $SCRATCH_MNT)
@@ -2773,10 +2773,10 @@ _filesystem_timestamp_range()
 	s64min=$((1<<63))
 
 	case $fstyp in
-	ext2)
+	ext2|fuse.ext2)
 		echo "$s32min $s32max"
 		;;
-	ext3|ext4)
+	fuse.ext[34]|ext3|ext4)
 		if [ $(dumpe2fs -h $device 2>/dev/null | grep "Inode size:" | cut -d: -f2) -gt 128 ]; then
 			printf "%d %d\n" $s32min 0x37fffffff
 		else
@@ -3386,7 +3386,7 @@ _fstyp_has_non_default_seek_data_hole()
 	fi
 
 	case "$fstyp" in
-	btrfs|ext4|xfs|cifs|f2fs|gfs2|ocfs2|tmpfs)
+	btrfs|ext4|fuse.ext4|xfs|cifs|f2fs|gfs2|ocfs2|tmpfs)
 		return 0
 		;;
 	nfs*)
@@ -3404,6 +3404,10 @@ _fstyp_has_non_default_seek_data_hole()
 			# Assume that base fs has default behavior
 			return 1
 		fi
+		;;
+	fuse.ext[23])
+		# fuse2fs doesn't implement SEEK_DATA/SEEK_HOLE yet
+		return 1
 		;;
 	*)
 		# by default fstyp has default SEEK_HOLE behavior;
@@ -3588,7 +3592,7 @@ _check_generic_filesystem()
 
     if [ $ok -eq 0 ] && [ -n "$DUMP_CORRUPT_FS" ]; then
         case "$FSTYP" in
-        ext*)
+        ext*|fuse.ext*)
             local flatdev="$(basename "$device")"
             _ext4_metadump "$device" "$seqres.$flatdev.check.qcow2" compress
             ;;
@@ -4319,6 +4323,10 @@ _has_metadata_journaling()
 	fi
 
 	case "$FSTYP" in
+	fuse.ext[234])
+		echo "fuse4fs does not support metadata journaling on $FSTYP"
+		return 1
+		;;
 	ext2|vfat|msdos|udf|exfat|tmpfs|hfs|hfsplus)
 		echo "$FSTYP does not support metadata journaling"
 		return 1
@@ -5560,7 +5568,7 @@ _label_get_max()
 	f2fs)
 		echo 255
 		;;
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext[234]|ext4)
 		echo 16
 		;;
 	*)
@@ -5804,7 +5812,7 @@ _require_od_endian_flag()
 # fs labels, and extended attribute names) as raw byte sequences.
 _require_names_are_bytes() {
         case "$FSTYP" in
-        ext2|ext3|ext4|f2fs|xfs|btrfs)
+        ext2|ext3|fuse.ext[234]|ext4|f2fs|xfs|btrfs)
 		# do nothing
 	        ;;
 	*)
@@ -5982,7 +5990,7 @@ _require_duplicate_fsid()
 	"btrfs")
 		_require_btrfs_fs_feature temp_fsid
 		;;
-	"ext4")
+	fuse.ext[234]|"ext4")
 		;;
 	*)
 		_notrun "$FSTYP does not support duplicate fsid"
