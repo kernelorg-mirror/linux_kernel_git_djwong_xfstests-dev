@@ -56,7 +56,7 @@ mount_free_loopdev()
 mount_wrong_fstype()
 {
 	local fs=ext4
-	if [ "$FSTYP" == "ext4" ]; then
+	if [[ "$FSTYP" =~ ext4 ]]; then
 		fs=xfs
 	fi
 	echo "# mount with wrong fs type" >>$seqres.full
