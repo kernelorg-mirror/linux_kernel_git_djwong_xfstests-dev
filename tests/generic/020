@@ -59,7 +59,7 @@ _attr_get_max()
 	xfs|udf|pvfs2|9p|ceph|fuse|nfs|ceph-fuse)
 		max_attrs=1000
 		;;
-	ext2|ext3|ext4)
+	ext2|ext3|fuse.ext[234]|ext4)
 		# For 4k blocksizes, most of the attributes have an attr_name of
 		# "attribute_NN" which is 12, and "value_NN" which is 8.
 		# But for larger block sizes, we start having extended
