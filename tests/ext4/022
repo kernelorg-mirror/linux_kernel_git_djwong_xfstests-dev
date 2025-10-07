@@ -6,6 +6,7 @@
 #
 # Test extending of i_extra_isize code
 #
+seqfull=$0
 . ./common/preamble
 _begin_fstest auto quick attr dangerous
 
@@ -20,6 +21,14 @@ do_setfattr()
 
 _exclude_fs ext2
 _exclude_fs ext3
+
+features=""
+if [[ "$FSTYP" =~ fuse.ext[234] ]]; then
+	# fuse2fs doesn't change extra_isize after inode creation
+	features="fuse2fs"
+fi
+_link_out_file "$features"
+
 
 _require_scratch
 _require_dumpe2fs
