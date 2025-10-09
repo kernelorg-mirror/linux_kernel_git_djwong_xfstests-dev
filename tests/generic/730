@@ -45,14 +45,23 @@ run_check _mount_fstyp $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
 # create a test file
 $XFS_IO_PROG -f -c "pwrite 0 1M" $SCSI_DEBUG_MNT/testfile >>$seqres.full
 
+# cycle the mount to avoid reading from cached metadata, because fuse servers
+# do not receive block device shutdown notifications
+if [[ "$FSTYP" =~ fuse* ]]; then
+	_unmount $SCSI_DEBUG_MNT >>$seqres.full 2>&1
+	run_check _mount_fstyp $SCSI_DEBUG_DEV $SCSI_DEBUG_MNT
+fi
+
 # open a file descriptor for reading the file
 exec 3< $SCSI_DEBUG_MNT/testfile
 
 # delete the scsi debug device while it still has dirty data
 echo 1 > /sys/block/$(_short_dev $SCSI_DEBUG_DEV)/device/delete
 
-# try to read from the file, which should give us -EIO
-cat <&3 > /dev/null
+# try to read from the file, which should give us -EIO.  redirect stderr
+# so that we can filter out additional errors when cat(1) closes stdin
+cat <&3 > /dev/null 2> $tmp.errors
+sed -e '/closing standard input/d' < $tmp.errors
 
 # close the file descriptor to not block unmount
 exec 3<&-
