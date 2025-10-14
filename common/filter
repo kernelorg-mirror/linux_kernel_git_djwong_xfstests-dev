@@ -688,10 +688,11 @@ _filter_sysfs_error()
 # 	... | _filter_file_attributes X
 # Or to filter all except X
 # 	... | _filter_file_attributes ~X
+# Be careful, we're filtering lsattr or xfs_io -c lsattr flags.
 _filter_file_attributes()
 {
 	if [[ $1 == ~* ]]; then
-		regex=$(echo "[aAcCdDeEFijmNPsStTuxVX]" | tr -d "$1")
+		regex=$(echo "[aAcCdDeEfFijmNpPsrStTuxVX]" | tr -d "$1")
 	else
 		regex="$1"
 	fi
