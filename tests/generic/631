@@ -45,7 +45,6 @@ _fixed_by_fs_commit xfs 6da1b4b1ab36 "xfs: fix an ABBA deadlock in xfs_rename"
 
 _scratch_mkfs >> $seqres.full
 _scratch_mount
-_supports_filetype $SCRATCH_MNT || _notrun "overlayfs test requires d_type"
 
 mkdir $SCRATCH_MNT/lowerdir
 mkdir $SCRATCH_MNT/lowerdir1
@@ -63,7 +62,7 @@ stop_workers() {
 	done
 }
 
-worker() {
+mount_overlay() {
 	local tag="$1"
 	local mergedir="$SCRATCH_MNT/merged$tag"
 	local l="lowerdir=$SCRATCH_MNT/lowerdir:$SCRATCH_MNT/lowerdir1"
@@ -71,24 +70,42 @@ worker() {
 	local w="workdir=$SCRATCH_MNT/workdir$tag"
 	local i="index=off"
 
+	rm -rf $SCRATCH_MNT/merged$tag
+	rm -rf $SCRATCH_MNT/upperdir$tag
+	rm -rf $SCRATCH_MNT/workdir$tag
+	mkdir $SCRATCH_MNT/merged$tag
+	mkdir $SCRATCH_MNT/workdir$tag
+	mkdir $SCRATCH_MNT/upperdir$tag
+
+	_mount -t overlay overlay -o "$l,$u,$w,$i" "$mergedir"
+}
+
+unmount_overlay() {
+	local tag="$1"
+	local mergedir="$SCRATCH_MNT/merged$tag"
+
+	_unmount $mergedir
+}
+
+worker() {
+	local tag="$1"
+	local mergedir="$SCRATCH_MNT/merged$tag"
+
 	touch $SCRATCH_MNT/workers/$tag
 	while test -e $SCRATCH_MNT/running; do
-		rm -rf $SCRATCH_MNT/merged$tag
-		rm -rf $SCRATCH_MNT/upperdir$tag
-		rm -rf $SCRATCH_MNT/workdir$tag
-		mkdir $SCRATCH_MNT/merged$tag
-		mkdir $SCRATCH_MNT/workdir$tag
-		mkdir $SCRATCH_MNT/upperdir$tag
-
-		_mount -t overlay overlay -o "$l,$u,$w,$i" $mergedir
+		mount_overlay $tag
 		mv $mergedir/etc/access.conf $mergedir/etc/access.conf.bak
 		touch $mergedir/etc/access.conf
 		mv $mergedir/etc/access.conf $mergedir/etc/access.conf.bak
 		touch $mergedir/etc/access.conf
-		_unmount $mergedir
+		unmount_overlay $tag
 	done
 	rm -f $SCRATCH_MNT/workers/$tag
 }
+
+mount_overlay check || \
+	_notrun "cannot mount overlayfs with underlying filesystem $FSTYP"
+unmount_overlay check
 
 for i in $(seq 0 $((4 + LOAD_FACTOR)) ); do
 	worker $i &
