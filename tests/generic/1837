@@ -1,0 +1,70 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2025 Oracle.  All Rights Reserved.
+#
+# FS QA Test 1837
+#
+# Make sure that we can receive udev events for mount, remount, unmount, and
+# filesystem shutdown.
+#
+. ./common/preamble
+_begin_fstest auto quick selfhealing
+
+_cleanup()
+{
+	cd /
+	test -n "$udevadm_pid" && kill -TERM $udevadm_pid &> /dev/null
+	rm -r -f $tmp.*
+}
+
+case "$FSTYP" in
+xfs)
+	# added as a part of xfs health monitoring
+	_require_xfs_io_command healthmon
+	;;
+ext[234])
+	modprobe fs-$FSTYP
+	test -e /sys/fs/ext4/features/uevents || \
+		_notrun "$FSTYP does not support uevents"
+	;;
+*)
+	_notrun "$FSTYP does not support uevents"
+	;;
+esac
+
+filter_udev()
+{
+	sed \
+		-e "s|$devpath|DEVPATH|g" \
+		-e "s|\[[0-9.]*\]|[TIMESTAMP]|g" \
+		-e "s|$FSTYP|FSTYP|g"
+}
+
+_require_scratch
+# so far all filesystem implementations that support this also support shutdown
+_require_scratch_shutdown
+
+_scratch_mkfs >> $seqres.full
+_scratch_mount
+sysfs_path="$($XFS_IO_PROG -c 'sysfspath' $SCRATCH_MNT)"
+test -n "$sysfs_path" || _notrun "cannot determine sysfs path"
+devpath="${sysfs_path#/sys}"
+_scratch_unmount
+
+$UDEVADM_PROG monitor --property > $tmp.udevadm &
+udevadm_pid=$!
+sleep 1
+
+_scratch_mount
+mount -o remount,ro $SCRATCH_MNT
+_scratch_shutdown
+_scratch_unmount
+
+sleep 1
+kill -TERM $udevadm_pid &>/dev/null
+cat $tmp.udevadm >> $seqres.full
+grep "KERNEL.*$devpath" $tmp.udevadm | filter_udev
+echo "$sysfs_path:$devpath" >> $seqres.full
+
+# success, all done
+_exit 0
