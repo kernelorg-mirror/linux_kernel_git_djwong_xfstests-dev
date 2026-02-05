@@ -22,6 +22,7 @@ _cleanup()
 
 _exclude_fs ext2
 _exclude_fs ext3
+_exclude_fs fuse.ext[234]	# fuse2fs doesn't write to bigalloc fs
 
 _require_scratch
 _require_scratch_ext4_feature "bigalloc"
