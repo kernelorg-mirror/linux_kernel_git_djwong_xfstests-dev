@@ -60,6 +60,16 @@ _require_scratch_nocheck
 _require_dm_target thin-pool
 
 _setup_thin
+
+case "$FSTYP" in
+fuse.ext[234]|ext[234])
+	# fuse2fs and the kernel shut down the filesystem any time the disk
+	# gives us an IO error.  This leads to corrupted filesystems if there
+	# is no journal to replay.
+	_require_metadata_journaling $DMTHIN_VOL_DEV
+	;;
+esac
+
 _workout
 _dmthin_check_fs
 _dmthin_cleanup
