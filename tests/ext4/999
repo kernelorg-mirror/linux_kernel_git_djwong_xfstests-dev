@@ -1,0 +1,39 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 Oracle, Inc.  All Rights Reserved.
+#
+# FS QA Test No. 999
+#
+# Create and populate an ext4 filesystem, run weird BPF thing.
+#
+. ./common/preamble
+_begin_fstest fuzzers
+
+# Import common functions.
+. ./common/filter
+. ./common/attr
+
+[[ $FSTYP =~ fuse ]] || _notrun "test requires fuse4fs"
+grep -q 'bpf_crap' $(which $FSTYP) || _notrun "fuse4fs doesn't support bpf"
+_require_command "$(type -P clang)" clang
+
+_require_scratch
+
+echo "+ create scratch fs"
+_scratch_mkfs >> $seqres.full 2>&1
+
+echo "+ mount fs image"
+_scratch_mount -o bpf_crap
+blksz="$(stat -f -c '%s' "${SCRATCH_MNT}")"
+
+echo "+ make some files"
+touch "${SCRATCH_MNT}/file0"
+#echo moo > "${SCRATCH_MNT}/file0"
+
+echo "+ run filefrag"
+$FILEFRAG_PROG -v "${SCRATCH_MNT}/file0" >> $seqres.full
+$FILEFRAG_PROG -v "${SCRATCH_MNT}/file0" | grep -q -w 99 || \
+	echo "FIEMAP not screwed up?"
+
+status=0
+exit
