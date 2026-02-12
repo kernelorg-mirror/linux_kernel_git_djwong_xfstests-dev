@@ -1,0 +1,5 @@
+QA output created by 999
++ create scratch fs
++ mount fs image
++ make some files
++ run filefrag
