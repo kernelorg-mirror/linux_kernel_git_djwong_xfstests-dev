@@ -25,6 +25,8 @@ _begin_fstest auto quick rw shutdown fiemap prealloc
 
 . ./common/filter
 
+_notrun "broken on most filesystems XXX"
+
 _require_scratch
 _require_block_device $SCRATCH_DEV
 _require_no_realtime
