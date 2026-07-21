@@ -176,22 +176,22 @@ echo "Test: XFS reproducible filesystem image creation"
 
 # Run three iterations
 hash1=$(_run_iteration 1)
-[ -z "$hash1" ] && _fail "Iteration 1 failed"
+[ -z "$hash1" ] && _fail "Iteration 1 failed" >> $seqres.full
 _test_iteration 1
 
 hash2=$(_run_iteration 2)
-[ -z "$hash2" ] && _fail "Iteration 2 failed"
+[ -z "$hash2" ] && _fail "Iteration 2 failed" >> $seqres.full
 _test_iteration 2
 
 hash3=$(_run_iteration 3)
-[ -z "$hash3" ] && _fail "Iteration 3 failed"
+[ -z "$hash3" ] && _fail "Iteration 3 failed" >> $seqres.full
 _test_iteration 3
 
 # Verify all hashes match
 if [ "$hash1" = "$hash2" ] && [ "$hash2" = "$hash3" ]; then
-	echo "All filesystem images are identical."
+	echo "All filesystem images are identical." >> $seqres.full
 else
-	echo "ERROR: Filesystem images differ!"
+	echo "ERROR: Filesystem images differ!" >> $seqres.full
 fi
 
 # success, all done
