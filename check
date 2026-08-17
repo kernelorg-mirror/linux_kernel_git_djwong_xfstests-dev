@@ -818,9 +818,8 @@ systemd-run --quiet --unit "fstests-check" --scope bash -c "exit 77" &> /dev/nul
 test $? -eq 77 && HAVE_SYSTEMD_SCOPES=yes
 
 # Make the check script unattractive to the OOM killer...
-OOM_SCORE_ADJ="/proc/self/oom_score_adj"
 function _adjust_oom_score() {
-	test -w "${OOM_SCORE_ADJ}" && echo "$1" > "${OOM_SCORE_ADJ}"
+	test -n "$CHOOM_PROG" && $CHOOM_PROG -p "$$" -n "$1" &> /dev/null
 }
 _adjust_oom_score -500
 
@@ -836,8 +835,11 @@ _adjust_oom_score -500
 # when systemd tells them to terminate (e.g. programs stuck in D state when
 # systemd sends SIGKILL), so we use reset-failed to tear down the scope.
 _run_seq() {
-	local cmd=(bash -c "test -w ${OOM_SCORE_ADJ} && echo 250 > ${OOM_SCORE_ADJ}; exec ./$seq")
+	local cmd=()
 	local res
+
+	test -n "$CHOOM_PROG" && cmd+=($CHOOM_PROG -n 250 --)
+	cmd+=(bash "./$seq")
 
 	if [ -n "${HAVE_SYSTEMD_SCOPES}" ]; then
 		local unit="$(systemd-escape "fs$seq").scope"
