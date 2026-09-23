@@ -27,7 +27,7 @@ _require_xfs_io_command "fzero"
 _require_xfs_io_command "fpunch"
 
 echo "Create and format"
-dev=$(_get_scsi_debug_dev 4096 4096 0 4 "lbpws=1 lbpws10=1")
+dev=$(_get_scsi_debug_dev 4096 4096 0 4 lbpws=1 lbpws10=1)
 _pwrite_byte 0x62 0 4m $dev >> $seqres.full
 $XFS_IO_PROG -c "fsync" $dev
 
@@ -70,7 +70,7 @@ echo "Destroy device"
 _put_scsi_debug_dev
 
 echo "Create w/o unmap or writesame and format"
-dev=$(_get_scsi_debug_dev 512 512 0 4 "lbpws=0 lbpws10=0 lbpu=0 write_same_length=0 unmap_max_blocks=0")
+dev=$(_get_scsi_debug_dev 512 512 0 4 lbpws=0 lbpws10=0 lbpu=0 write_same_length=0 unmap_max_blocks=0)
 _pwrite_byte 0x62 0 4m $dev >> $seqres.full
 $XFS_IO_PROG -c "fsync" $dev
 
