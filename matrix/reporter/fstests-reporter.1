@@ -1,0 +1,30 @@
+.TH FSTESTS-REPORTER "1" "October 2018" "fstests-reporter"
+.SH NAME
+fstests-reporter - Manage fstests result reporting service
+.SH SYNOPSYS
+.B
+fstests-reporter VERB [options...]
+.SH DESCRIPTION
+Manages the fstests results reporting service, which collects all available
+test results and uploads them somewhere.
+.SH VERBS
+Verbs are as follows:
+.TP
+.B stop
+Deactivate the service.
+.TP
+.B status
+Report status of the service.
+.TP
+.B start
+Starts the service.
+Three parameters are required: the path to the fstests directory, a path
+where the results will be collected, and the rsync upload target.
+The optional fourth argument is the path to the console output.
+.TP
+.B upload
+Upload the most recent reports to the server.
+.SH AUTHOR
+Oracle
+.SH COPYRIGHT
+Copyright ©2026 Oracle.  License is GPLv2+. <http://www.gnu.org/licenses/gpl-2.0.html>

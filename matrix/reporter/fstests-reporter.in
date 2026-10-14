@@ -1,0 +1,71 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Control the fstmatrix-reporter service
+
+svcdir="%systemd_services_conf_dir%/fstmatrix-reporter.service.d"
+svc_conf="${svcdir}/00-runtime.conf"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+force_upload() {
+	test -e "${svc_conf}" || return
+
+	local grep_str='^Environment=OUTPUT_DIR='
+	local outdir="$(grep "${grep_str}" "${svc_conf}" | sed -e "s/${grep_str}//g")"
+	rm -f "${outdir}/tarballs/.upload"
+	systemctl restart fstmatrix-reporter.service
+}
+
+case "$1" in
+"start")
+	shift
+
+	test -d "$1" || die "fstests dir doesn't exist."
+	test -n "$2" || die "missing output dir."
+	test -n "$3" || die "missing fstests result base."
+	console_output="${4:-/dev/null}"
+
+	# Configure service
+	mkdir -p "${svcdir}" "$2"
+	cat > "${svc_conf}" << ENDL
+[Service]
+Environment=FSTESTS_DIR=$1
+Environment=OUTPUT_DIR=$2
+Environment=RESULT_BASE=$3
+Environment=CONSOLE_OUTPUT=${console_output}
+ENDL
+
+	systemctl daemon-reload
+
+	# Start the timer
+	systemctl enable fstmatrix-reporter.timer 2> /dev/null
+	systemctl start fstmatrix-reporter.timer
+	;;
+"stop")
+	# Stop the timer
+	systemctl stop fstmatrix-reporter.timer
+	systemctl disable fstmatrix-reporter.timer 2> /dev/null
+
+	# Run once more to report final results
+	force_upload
+	;;
+"status")
+	systemctl "$1" fstmatrix-reporter.timer
+	;;
+"upload")
+	force_upload
+	;;
+"--help")
+	echo "Usage: $0 [start fstests_dir output_dir result_base console_output|stop|status|upload]"
+	exit 1
+	;;
+*)
+	echo "Unknown command \"$1\"."
+	echo "Usage: $0 [start fstests_dir output_dir result_base console_output|stop|status|upload]"
+	exit 1
+	;;
+esac

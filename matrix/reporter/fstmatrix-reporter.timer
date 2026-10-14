@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+[Unit]
+Description=Periodic fstests Results Uploader
+
+[Timer]
+# Run the uploader 10s after the timer starts, then every 13 minutes
+# after that
+OnActiveSec=10s
+OnUnitActiveSec=13m
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

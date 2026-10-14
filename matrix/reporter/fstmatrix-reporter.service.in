@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+
+[Unit]
+Description=fstests Results Uploader
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=%pkg_libexec_dir%/fstmatrix-reporter ${FSTESTS_DIR} ${RESULT_BASE} ${CONSOLE_OUTPUT} ${OUTPUT_DIR}
+ExecCondition=%pkg_libexec_dir%/fstmatrix-want-reporter ${RESULT_BASE}
+TimeoutSec=infinity
+
+# Don't let OOM kills of processes in this containment group kill the whole
+# service, since it's directly associated with running fstests.  On those
+# grounds, set the OOM score adjustment to the same as fstests.
+OOMPolicy=continue
+OOMScoreAdjust=-500

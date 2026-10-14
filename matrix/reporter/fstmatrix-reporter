@@ -1,0 +1,19 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Collect and report fstests results
+# Usage: $0 fstests-dir result-base console-output outdir
+
+scriptdir="$(dirname "$0")"
+
+fstests_dir="$1"
+resultbase="$2"
+console_output="$3"
+outdir="$4"
+
+# Linux 6.19 has a NFS bug where mtime doesn't get updated on write()
+# so we must do it explicitly.
+test -e "${console_output}" && touch "${console_output}"
+
+"${scriptdir}/collect-all-results" "${fstests_dir}" "${resultbase}" "${console_output}" "${outdir}"
+"${scriptdir}/upload-all-results" "${outdir}"

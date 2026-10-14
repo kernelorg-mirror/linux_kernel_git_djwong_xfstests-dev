@@ -1,0 +1,22 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Decide if we have fstests results to report
+# Usage: $0 result-base
+
+scriptdir="$(dirname "$0")"
+
+resultbase="$1"
+
+find_args=("${resultbase}/")
+
+files=(result.xml)
+nr=0
+for file in "${files[@]}"; do
+	test "${nr}" -gt 0 && find_args+=('-o')
+	find_args+=('-name' "${file}" '-print')
+	nr=$((nr + 1))
+done
+
+# Do we get any output at all?
+test -n "$(find "${find_args[@]}" 2> /dev/null)"

@@ -1,0 +1,19 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Compute machine fingerprint
+# Usage: $0 output-dir
+
+cd "$1"
+lscpu | egrep '(^Architecture:|^CPU.s.:|^NUMA node.s.:)' > fingerprint
+/bin/egrep '(^MemTotal:|^SwapTotal:)' /proc/meminfo | awk '{printf("%s %.0f GB\n", $1, $2 / 1048576);}' >> fingerprint
+lsblk -n -o NAME,SIZE,PHY-SEC,LOG-SEC,ROTA,SCHED,TYPE | grep '^[[:alpha:]]' | sort >> fingerprint
+
+lscpu > cpu
+lsblk -O -J > blk
+lspci > pci
+cat /proc/meminfo > mem
+
+hostname="$(hostname | tr './' '__')"
+test -z "${hostname}" && hostname="unknown"
+echo "${hostname}" > hostname

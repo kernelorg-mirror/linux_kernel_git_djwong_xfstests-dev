@@ -1,0 +1,5 @@
+# Configuration file for fstmatrix-reporter
+#
+# Set this to a list of URLs that will accept fstests results.  Generally, this
+# will be the URL of the uploader.php script from the -collector package.
+# REPORTER_URLS=("https://example.com/fstests/uploader.php")
