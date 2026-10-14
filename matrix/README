@@ -1,0 +1,11 @@
+To create database:
+
+./create_db <database dir>
+
+To add results to database:
+
+./stow_tarballs <database dir> <xfsout tarball dir>
+
+To force reprocessing:
+
+rm <xfsout tarball dir>/tarballs.list
