@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+%:
+	dh $@ --with python3 --with installsysusers
+
+# restart the collector socket and service because systemd can't handle
+# restarting the socket if the service doesn't also terminate
+override_dh_installsystemd:
+	dh_installsystemd -p fstests-reporter --no-enable --no-start --no-restart-after-upgrade --no-restart-on-upgrade fstmatrix-reporter.timer
+	dh_installsystemd -p fstests-dashboard fstmatrix-dashboard.service
+	dh_installsystemd -p fstests-collector fstmatrix-receive.socket

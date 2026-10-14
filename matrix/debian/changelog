@@ -1,0 +1,5 @@
+fstmatrix (1.0) trixie; urgency=medium
+
+  * Initial packaging.
+
+ -- Darrick J. Wong <djwong@djwong.org>  Wed, 14 Oct 2026 17:28:17 -0700

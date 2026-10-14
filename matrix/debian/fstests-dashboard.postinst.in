@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+test -d "%fstmatrix_inst_dir%/database" && \
+	"%pkg_libexec_dir%/create_dashboard" "%fstmatrix_inst_dir%/database" "%fstmatrix_inst_dir%/www"
+
+systemctl daemon-reload || true
+
+#DEBHELPER#
+
+exit 0

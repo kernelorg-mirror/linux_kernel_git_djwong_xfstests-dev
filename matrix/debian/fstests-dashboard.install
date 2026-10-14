@@ -1,0 +1,13 @@
+/usr/libexec/fstmatrix/create_dashboard
+/usr/libexec/fstmatrix/stow_dashboard
+/usr/share/fstmatrix/fstests.css
+/usr/share/fstmatrix/fstests.js
+/usr/share/fstmatrix/all.html
+/usr/share/fstmatrix/index.html
+/usr/share/fstmatrix/jquery.js
+/usr/share/fstmatrix/x.big.png
+/usr/share/fstmatrix/x.png
+/usr/share/fstmatrix/.htaccess
+/usr/lib/systemd/system/fstmatrix-dashboard.service
+/usr/sbin/config-fstests-dashboard
+/usr/share/man/man8/config-fstests-dashboard.8
