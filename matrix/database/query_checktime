@@ -1,0 +1,31 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Generate check.time file
+# Usage: $0 fsmatrix-dir machine-hash
+
+srcdir="$(dirname "$0")"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -ne 2 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Report on average test runtimes for a given machine type id."
+	echo "Usage: $0 database_dir machine_id"
+	exit 1
+fi
+
+fsmatrix="$1"
+machine_hash="$2"
+
+mkdir -p "${fsmatrix}"
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+test -n "${machine_hash}" || die "no machine hash"
+
+args=('-cmd' '.mode tabs')
+args+=('-cmd' "SELECT test_name, avg_runtime FROM check_time WHERE machine_hash = '${machine_hash}';")
+
+"${srcdir}/db" "${fsmatrix}" "${args[@]}" < /dev/null

@@ -1,0 +1,26 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Create database views
+# Usage: $0 fsmatrix-dir
+
+srcdir="$(dirname "$0")"
+sqldir="%pkg_lib_dir%"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -ne 1 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Recreate views in database."
+	echo "Usage: $0 database_dir"
+	exit 1
+fi
+
+fsmatrix="$1"
+mkdir -p "${fsmatrix}"
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+
+"${srcdir}/db" "${fsmatrix}" < "${sqldir}/views.sql"

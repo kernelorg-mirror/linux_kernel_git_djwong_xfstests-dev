@@ -1,0 +1,86 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Archive test artifacts
+# Usage: $0 [--rm] fsmatrix-dir [urlprefix]
+
+srcdir="$(dirname "$0")"
+keep=1
+fsmatrix=
+urlprefix=
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+print_help() {
+	echo "Archive test artifacts in a tarball."
+	echo "Usage: $0 [--rm] database_dir [urlprefix]"
+}
+
+if [ -z "$1" ] || [ "$1" = "--help" ]; then
+	print_help
+	exit 1
+fi
+
+for arg in "$@"; do
+	case "${arg}" in
+	"--rm")
+		keep=
+		;;
+	"--help"|-*)
+		print_help
+		exit 1
+		;;
+	*)
+		if [ -z "${fsmatrix}" ]; then
+			fsmatrix="${arg}"
+		elif [ -z "${urlprefix}" ]; then
+			urlprefix="${arg}"
+		else
+			echo "${arg}: database dir and url prefix already specified"
+			print_help
+			exit 1
+		fi
+		;;
+	esac
+done
+
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+
+cd "${fsmatrix}"
+
+# Compress the test artifacts into a tarball.
+if [ ! -e "artifacts.tar.zst" ]; then
+	# Why does redirecting the output instead of using -o result in a
+	# smaller file?
+	tar c fingerprints/ groups/ machines/ | \
+		zstd -19 -T0 -v > artifacts.tar.zst || exit
+
+	test -z "${keep}" && rm -r -f fingerprints groups machines
+fi
+
+# Regenerate json and rss feeds if we were given a url prefix (aka the
+# dashboard is present)
+if [ -n "${urlprefix}" ] && [ -x "%pkg_libexec_dir%/create_dashboard" ]; then
+	webdir="$(readlink -m "${fsmatrix}/../www/")"
+
+	"%pkg_libexec_dir%/create_dashboard" "${fsmatrix}" "${webdir}"
+
+	# Last new results that were visible
+	"${srcdir}/query_recent_test_runs" \
+		--json "${webdir}/fstestsbot.js" \
+		--rss  "${webdir}/fstestsbot.rss" \
+		--urlprefix "${urlprefix}" \
+		"${fsmatrix}"
+
+	# Giant catalogue of everything
+	"${srcdir}/query_all_test_runs" \
+		--json "${webdir}/fstestsall.js" \
+		--rss  "${webdir}/fstestsall.rss" \
+		--urlprefix "${urlprefix}" \
+		--compress \
+		"${fsmatrix}"
+fi

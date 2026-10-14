@@ -1,0 +1,334 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Queries the status of the most recent test runs for every host known to the
+# database.  This is roughly based on:
+#
+# SELECT machine_name.name, test_run.start_time, max(test_run.mtime),
+# test_run.kernel, test_run.mount_opts, test_run.mkfs_opts, test_run.run_time,
+# test_run.failed, test_run.skipped, test_run.tried, test_run.counted from
+# test_run, machine_name where machine_name.id = test_run.machine_name_id group
+# by machine_name_id order by test_run.mtime;
+
+# Usage: $0 db_dir
+
+import sys
+import os
+import json
+import argparse
+import xml.etree.ElementTree as ET
+import email.utils as EU
+import datetime
+import subprocess
+
+sys.path.append('%pkg_lib_dir%')
+import fstestdb
+
+def die(s):
+	print(s)
+	sys.exit(1)
+
+DEBUG = 'DBG' in os.environ
+
+def now_timestamp():
+	x = datetime.datetime.now(datetime.UTC)
+	return x.timestamp()
+
+def render_testrun_failures(dq, testrun):
+	'''Render test failures as names or hashes.'''
+	return ', '.join([find_test_name(dq, x) for x in dq.query_failed_tests(testrun)])
+
+def find_test_name(dq, test):
+	'''Find the name of this test.'''
+	for testname in dq.query_test_name(test):
+		return testname.name
+	return f'{test.hash_id.value[:12]}...'
+
+def _human_pct(n, d):
+	'''Render a fraction as a human-readable percentage.'''
+	if n <= 0:
+		return '0%'
+	if d == 0:
+		d += 1
+	pct = 100.0 * n / d;
+	if pct >= 10:
+		return f'{pct:.0f}%'
+	if pct >= 1:
+		return f'{pct:.1f}%'
+	if pct >= 0.1:
+		return f'{pct:.2f}%'
+	return f'{pct:.3f}%'
+
+def _summary(testrun, nr):
+	'''Render numerical status.'''
+	status = f'{nr:,} of {testrun.attempted:,} '
+	status += f'({_human_pct(nr, testrun.attempted)}) tests'
+	if testrun.run_time is None:
+		status += ' so far';
+
+	# If we ran fewer than 100 tests then assume we weren't trying for a
+	# comprehensive QA run.  Coverage here is defined as tests that passed,
+	# failed, or weren't appropriate for the fs configuration (i.e.
+	# _notrun).
+	if testrun.attempted >= 100:
+		status += f', covering {_human_pct(testrun.tried, testrun.counted)} '
+		status += f'of {testrun.counted:,}'
+
+	# Estimate the amount of time elapsed so far.
+	if testrun.run_time is None:
+		elapsed = int(now_timestamp()) - testrun.start_time;
+		status += ' after ';
+	else:
+		elapsed = testrun.run_time;
+		status += ' in ';
+
+	if elapsed >= 86400:
+		status += f'{elapsed / 86400:.1f} days.'
+	elif elapsed >= 3600:
+		status += f'{elapsed / 3600:.1f} hours.'
+	elif elapsed >= 60:
+		status += f'{elapsed / 60:.0f} mins.'
+	else:
+		status += f'{elapsed:.0f} secs.'
+	return status
+
+def render_status(testrun):
+	'''Render status message.'''
+	def st(color, status):
+		'''Render status line'''
+		return f'<span style="color: {color}; font-weight: bold">{status}</span>'
+
+	# From the junit xml reports, we have some summary counters:
+	#  - failed/failures: # of real test failures;
+	#  - tried/tests: # of tests we chose for this test run;
+	#  - skipped: # of tests that declined to run;
+	#  - counted: # of tests in the fingerprint file.
+	#
+	# # of tests attempted so far is (tried - skipped).
+	# # of tests that passed so far is (attempted - failed).
+
+	testrun.attempted = testrun.tried - testrun.skipped
+	testrun.passed = testrun.attempted - testrun.failed
+	testrun.notsel = testrun.counted - testrun.tried
+
+	# Still running...
+	if testrun.run_time is None:
+		is_late = testrun.mtime < now_timestamp() - (15 * 60)
+		if is_late:
+			s = st('blue', 'Running Late')
+		else:
+			s = st('black', 'Running')
+		return s + ', passed ' + _summary(testrun, testrun.passed)
+
+	# Finished without running anything.
+	if testrun.attempted < 1:
+		return 'Did not run any tests.'
+
+	# Finished with failures.
+	if testrun.failed > 0:
+		return st('red', 'Failed') + ' ' +  _summary(testrun, testrun.failed)
+
+	# Everything passed!
+	return st('#00c000', 'Passed') + ' all ' + _summary(testrun, testrun.passed)
+
+def dump_rss(runs, fails, dq, fd, urlprefix):
+	'''Print the query results as RSS.'''
+	def fs(s):
+		return s.replace(',', ', ')
+
+	rss_elt = ET.Element('rss')
+	rss_elt.attrib['version'] = '2.0'
+	channel_elt = ET.SubElement(rss_elt, 'channel')
+
+	title_elt = ET.SubElement(channel_elt, 'title')
+	title_elt.text = 'fstests'
+
+	pubdate_elt = ET.SubElement(channel_elt, 'pubDate')
+	pubdate_elt.text = EU.formatdate(int(now_timestamp()))
+
+	descr_elt = ET.SubElement(channel_elt, 'description')
+	descr_elt.text = 'Recent runs of the fstests suite.'
+
+	link_elt = ET.SubElement(channel_elt, 'link')
+	link_elt.text = 'https://kernel.org/'
+
+	lang_elt = ET.SubElement(channel_elt, 'language')
+	lang_elt.text = 'en-US'
+
+	for testrun in runs:
+		# Only finished runs
+		if testrun.run_time is None:
+			continue
+		item_elt = ET.SubElement(channel_elt, 'item')
+
+		title_elt = ET.SubElement(item_elt, 'title')
+		title_elt.text = f'Test Run on {testrun.machine_name_id.name}'
+
+		link_elt = ET.SubElement(item_elt, 'link')
+		link_elt.text = f'{urlprefix}output/.{testrun.machine_id.hash_id.value}/.{testrun.hash_id.value}/?C=M;O=A'
+
+		guid_elt = ET.SubElement(item_elt, 'guid')
+		guid_elt.attrib['isPermaLink'] = 'false'
+		guid_elt.text = f'betaA_{testrun.hash_id.value}'
+
+		descr = '<table><tbody>'
+		right_td = '<tr><td style="white-space: nowrap; text-align: right; vertical-align: top; padding-right: 0.5em;">'
+		# Older versions of the reporter didn't consistently capture
+		# these datapoints, with the exception of FSTYP.
+		if testrun.kernel is not None:
+			descr += f'{right_td}Kernel:</td><td>{testrun.kernel}</td></tr>'
+		if testrun.mkfs_opts is not None:
+			descr += f'{right_td}Format:</td><td>mkfs.{testrun.fstyp} {fs(testrun.mkfs_opts)}</td></tr>'
+		if testrun.mount_opts is not None:
+			descr += f'{right_td}Mount:</td><td>{fs(testrun.mount_opts)}</td></tr>'
+		if testrun.check_opts is not None:
+			descr += f'{right_td}Testing:</td><td>{fs(testrun.check_opts)}</td></tr>'
+		if testrun.failed > 0:
+			descr += f'{right_td}Failures:</td><td>{fails[testrun]}</td></tr>'
+		descr += f'{right_td}Status:</td><td>{render_status(testrun)}</td></tr>'
+		descr += '</tbody></table>'
+
+		descr_elt = ET.SubElement(item_elt, 'description')
+		descr_elt.text = descr
+
+		pubdate_elt = ET.SubElement(item_elt, 'pubDate')
+		pubdate_elt.text = EU.formatdate(testrun.mtime)
+
+	xml = ET.ElementTree(rss_elt)
+	ET.indent(xml, space = '\t')
+	xml.write(fd, encoding = 'unicode', xml_declaration = True)
+
+def dump_json(runs, fails, dq, fd):
+	'''Dump the test run results as JSON.'''
+	results = []
+	for testrun in runs:
+		hostname = testrun.machine_name_id.name
+		result = {}
+		result['name'] = hostname
+		result['kernel'] = testrun.kernel
+		result['fstyp'] = testrun.fstyp
+		result['mkfs_opts'] = testrun.mkfs_opts
+		result['mount_opts'] = testrun.mount_opts
+		result['time'] = testrun.mtime
+		result['testing'] = testrun.check_opts
+		if testrun.failed > 0:
+			result['failures'] = fails[testrun]
+
+		# New stuff
+		result['start_time'] = testrun.start_time
+		result['failed'] = testrun.failed
+		result['skipped'] = testrun.skipped
+		result['tried'] = testrun.tried
+		result['counted'] = testrun.counted
+		result['run_time'] = testrun.run_time
+
+		# Link to the actual test results
+		result['machine_hash'] = testrun.machine_id.hash_id.value
+		result['test_run_hash'] = testrun.hash_id.value
+
+		results.append(result)
+
+	json.dump(results, fd, indent = 4)
+
+def check_args(args):
+	if args.urlprefix == '':
+		print('urlprefix cannot be an empty string.')
+		sys.exit(1)
+	if args.rss is not None and args.urlprefix is None:
+		print('urlprefix must be specified.')
+		sys.exit(1)
+
+def run(args):
+	'''Return a subprocess, having opened stdin as a pipe.'''
+	p = subprocess.Popen(args)
+	p.wait()
+	if p.returncode != 0:
+		raise subprocess.CalledProcessError(p.returncode, args)
+
+def generate(dq, runs, args):
+	files = []
+	fails = {}
+	for testrun in runs:
+		if testrun.failed > 0:
+			fails[testrun] = render_testrun_failures(dq, testrun)
+
+	if args.json is not None:
+		with open(args.json, 'w') as fd:
+			dump_json(runs, fails, dq, fd)
+			files.append(args.json)
+
+	if args.rss is not None:
+		with open(args.rss, 'w') as fd:
+			dump_rss(runs, fails, dq, fd, args.urlprefix)
+			files.append(args.rss)
+
+	if args.rss is None and args.json is None:
+		dump_json(runs, fails, dq, sys.stdout)
+
+	if args.compress:
+		cmd = ['brotli', '-9', '-f', '--rm'] + files
+		run(cmd)
+
+def recent_main():
+	p = argparse.ArgumentParser(
+			description = 'Query most recent test runs for each host.')
+	p.add_argument('db_dir', type = str,
+			help = 'Directory containing database.')
+	p.add_argument('--json', type = str,
+			help = 'Dump output to this file in JSON format.')
+	p.add_argument('--rss', type = str,
+			help = 'Dump output to this file in RSS format.')
+	p.add_argument('--urlprefix', type = str,
+			help = 'URL prefix of the output directory, for RSS.')
+	p.add_argument('--max-age', type = int,
+			help = 'Maximum age of test results to examine, in days.')
+	p.add_argument('--compress', action = 'store_true',
+			help = 'Compress the output files with brotli -9.')
+
+	args = p.parse_args()
+	check_args(args)
+
+	# Connect to the database
+	db = fstestdb.Database(args.db_dir, readonly = True)
+	dq = fstestdb.DatabaseQuery(db)
+	if args.max_age:
+		if args.max_age <= 0:
+			print('max age must be a positive integer.')
+			sys.exit(1)
+		ma = args.max_age * 86400
+	else:
+		ma = None
+	runs = list(dq.query_current_test_runs(max_age = ma))
+
+	generate(dq, runs, args)
+
+def all_main():
+	p = argparse.ArgumentParser(
+			description = 'Query all test runs for each host.')
+	p.add_argument('db_dir', type = str,
+			help = 'Directory containing database.')
+	p.add_argument('--json', type = str,
+			help = 'Dump output to this file in JSON format.')
+	p.add_argument('--rss', type = str,
+			help = 'Dump output to this file in RSS format.')
+	p.add_argument('--urlprefix', type = str,
+			help = 'URL prefix of the output directory, for RSS.')
+	p.add_argument('--compress', action = 'store_true',
+			help = 'Compress the output files with brotli -9.')
+
+	args = p.parse_args()
+	check_args(args)
+
+	# Connect to the database
+	db = fstestdb.Database(args.db_dir, readonly = True)
+	dq = fstestdb.DatabaseQuery(db)
+	runs = list(dq.query_test_runs())
+
+	generate(dq, runs, args)
+
+if __name__ == '__main__':
+	if 'query_recent_test_runs' in sys.argv[0]:
+		recent_main()
+	else:
+		all_main()

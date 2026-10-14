@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Query database for test machine information.
+# Usage; $0 ...
+
+import sys
+import argparse
+import traceback
+
+sys.path.append('%pkg_lib_dir%')
+import fstestdb
+
+def main():
+	t = fstestdb.MachineWithName
+	p = argparse.ArgumentParser(
+			description = 'Query database for test run IDs.')
+	p.add_argument('db_dir', type = str,
+			help = 'Directory containing database.')
+	p.add_argument('--attrs', type = str,
+			help = 'Attributes to return.')
+	p.add_argument('query', type = str,
+			help = 'Query to run.')
+	args = p.parse_args()
+
+	db = fstestdb.Database(args.db_dir)
+	q = fstestdb.DatabaseQuery(db)
+	n = fstestdb.DatabaseQuery.construct_ns_map(t)
+	kwargs = {}
+	if args.attrs is not None:
+		a = fstestdb.DatabaseQuery.interpret_attrs(args.attrs, n)
+		kwargs['attrs'] = a
+		print(a)
+	p = fstestdb.DatabaseQuery.interpret_predicates(args.query, n)
+
+	for r in q.query_single_table(t, p, **kwargs):
+		print(r.__dict__)
+
+if __name__ == '__main__':
+	main()

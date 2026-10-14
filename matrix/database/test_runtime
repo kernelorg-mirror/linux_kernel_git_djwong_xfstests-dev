@@ -1,0 +1,9 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Turn a result.xml into a simple report of test name and runtime
+
+grep time= result.xml | \
+	sed -e 's/^.*name..//g' -e 's/..time../ /g' -e 's/..$//g' | \
+	awk '{printf("%-16s%u\n", $1, $2);}' | \
+	sort -g -k 2

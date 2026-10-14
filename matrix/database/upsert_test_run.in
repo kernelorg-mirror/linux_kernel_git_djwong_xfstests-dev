@@ -1,0 +1,448 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Upsert the details of a test run to the database
+# Usage: $0 db_dir summary_dir machine_dir result_dir machine_id testrun_id
+
+import sys
+import json
+import sqlite3
+import os
+import argparse
+import xml.etree.ElementTree as ET
+
+sys.path.append('%pkg_lib_dir%')
+import fstestdb
+
+def die(s):
+	print(s)
+	sys.exit(1)
+
+DEBUG = 'DBG' in os.environ
+
+def cvtnum(s):
+	def suffix(s):
+		for x in range(len(s) - 1, -1, -1):
+			if s[x].isdigit():
+				return x + 1
+	x = suffix(s)
+	number = float(s[:x])
+	unit = s[x:].strip().casefold()
+	if unit.startswith('p'):
+		number *= (1 << 50)
+	elif unit.startswith('t'):
+		number *= (1 << 40)
+	elif unit.startswith('g'):
+		number *= (1 << 30)
+	elif unit.startswith('m'):
+		number *= (1 << 20)
+	elif unit.startswith('k'):
+		number *= (1 << 10)
+	return number
+
+def cvtnum_mb(s):
+	return int(cvtnum(s) / 1048576)
+
+def testrun_starttime(summary_dir):
+	'''Return the start time of a test run as the number of seconds since
+	the start of the Unix epoch, 1/1/1970 00:00:00 UTC'''
+
+	fname = f'{summary_dir}/check.starttime'
+	with open(fname, mode = 'r', encoding = 'utf-8') as fd:
+		for line in fd:
+			return int(line)
+
+def report_mtime(summary_dir):
+	'''Return the time when the fstests report was last generated, in
+	seconds since 1/1/1970 00:00:00 UTC.'''
+
+	files = ['result.xml', 'check.report', 'check.log', 'check.time']
+	for f in files:
+		try:
+			return int(os.stat(f'{summary_dir}/{f}').st_mtime)
+		except:
+			continue
+	return None
+
+def parse_test_mappings(fp_fd):
+	'''Map a test's short name (e.g. generic/388) to its hash.'''
+	mappings = {}
+
+	for line in fp_fd:
+		x = line.split()
+		if len(x) != 2:
+			x = line.split(',')
+		short_name = x[0].strip()
+		test_hash = x[1].strip()
+		mappings[short_name] = test_hash
+
+	return mappings
+
+def parse_machine_fingerprint(machine, fp_fd, blk_fd):
+	'''Load machine fingerprint info into the machine object.'''
+	xlate = {
+		'Architecture:'.casefold():	('arch', lambda x: x),
+		'CPU(s):'.casefold():		('cpus', int),
+		'NUMA node(s):'.casefold():	('nodes', int),
+		'MemTotal:'.casefold():		('ram_mb', cvtnum_mb),
+	}
+
+	for line in fp_fd:
+		cfline = line.strip().casefold()
+		line_used = False
+		for x in xlate:
+			if cfline.startswith(x):
+				v = cfline[len(x):].strip()
+				machine.set_attr(xlate[x][0], xlate[x][1](v))
+				line_used = True
+				break
+		if line_used:
+			continue
+		if cfline.startswith('sd') or cfline.startswith('nvme'):
+			machine.add_disk(cvtnum_mb(cfline.split()[1]))
+		elif cfline.startswith('pmem'):
+			machine.add_pmem(cvtnum_mb(cfline.split()[1]))
+	if machine.arch is None:
+		raise Exception('not a machine fingerprint file')
+
+	try:
+		bdevs = json.load(blk_fd)['blockdevices']
+		machine.reset_storage()
+
+		for bdev in bdevs:
+			if 'children' in bdev:
+				del bdev['children']
+			if bdev['name'].startswith('pmem'):
+				machine.add_pmem(cvtnum_mb(bdev['size']))
+			else:
+				machine.add_disk(cvtnum_mb(bdev['size']))
+	except:
+		pass
+
+	machine.summarize_storage()
+
+def parse_summary(testrun, testsuite, summary_dir):
+	'''Load test run information from the summary data in the xunit report.'''
+	env = set(['SECTION', 'FSTYP', 'MKFS_OPTIONS', 'CHECK_OPTIONS',
+		   'TIME_FACTOR', 'LOAD_FACTOR', 'TEST_DIR', 'TEST_DEV',
+		   'SCRATCH_DEV', 'SCRATCH_MNT', 'MOUNT_OPTIONS',
+		   'KERNEL'])
+	vconvert = {
+		'SECTION': lambda x: None if x == '-no-sections-' else x,
+		'TIME_FACTOR': int,
+		'LOAD_FACTOR': int,
+	}
+	nconvert = {
+		'MKFS_OPTIONS': 'mkfs_opts',
+		'CHECK_OPTIONS': 'check_opts',
+		'MOUNT_OPTIONS': 'mount_opts',
+	}
+
+	# Compute the summary values from the xml structures because the
+	# values attached to the root node are known to be buggy; the @tests
+	# attribute is overstated by the number of @skipped tests.
+	testrun.set_attr('failed', len(testsuite.findall('./{*}testcase/{*}failure')))
+	testrun.set_attr('skipped', len(testsuite.findall('./{*}testcase/{*}skipped')))
+	testrun.set_attr('tried', len(testsuite.findall('./{*}testcase')))
+	if testsuite.attrib['time'] == '':
+		testrun.set_attr('run_time', None)
+	else:
+		testrun.set_attr('run_time', int(testsuite.attrib['time']))
+
+	for p in testsuite.findall('./{*}properties/{*}property'):
+		key = p.attrib['name']
+		val = p.attrib['value']
+		if key not in env:
+			continue
+
+		if key in vconvert:
+			val = vconvert[key](val)
+		if key in nconvert:
+			key = nconvert[key]
+		else:
+			key = key.lower()
+		testrun.set_attr(key, val)
+
+def parse_test_groups(group_fd):
+	'''Map a test (by short name) to all of its test groups (e.g. swapext, quota, rw, auto).'''
+	groups = {}
+
+	for line in group_fd:
+		comment = line.find('#')
+		if comment >= 0:
+			line = line[:comment]
+		x = [x.strip() for x in line.split()]
+		groups[x[0]] = x[1:]
+
+	return groups
+
+def compute_suffix_files():
+	ret = {
+		'diff':  ['.out.diff'],
+		'full':  ['.full'],
+		'dmesg': ['.dmesg']
+	}
+
+	for suffix in ret:
+		s = ret[suffix]
+		suffix = s[0]
+		for ext in ['gz', 'bz2', 'lz4', 'xz', 'zst', 'br']:
+			s.append(f'{suffix}.{ext}')
+	return ret
+
+def parse_test_results(db, new_results_dir, testrun, testmap, lastmod, testsuite):
+	'''Parse the results of a test.'''
+
+	suffix_files = compute_suffix_files()
+	for testcase in testsuite.findall('./{*}testcase'):
+		# Unpack xml
+		name = testcase.attrib['name']
+		if testcase.findall('./{*}failure'):
+			result = 'fail'
+		elif testcase.findall('./{*}skipped'):
+			result = 'notrun'
+		else:
+			result = 'pass'
+		test_time = testcase.attrib['time']
+
+		# Some tests fail to fingerprint (generic/257) so we ignore
+		# them.
+		if name not in testmap:
+			continue
+
+		# Result type we know about?
+		result_type = fstestdb.ResultType.resurrect(db, name = result)
+		if result_type.needs_update(lastmod):
+			result_type.touch(lastmod)
+			result_type.persist(db)
+
+		# Ensure the hash table has an entry for this test
+		testhash = fstestdb.Hash.resurrect(db, value = testmap[name])
+		if testhash.needs_update(lastmod):
+			testhash.touch(lastmod)
+			testhash.persist(db)
+
+		# Go find the test
+		test = fstestdb.Test.resurrect(db, hash_id = testhash)
+		if test.needs_update(lastmod):
+			test.set_relation('hash_id', testhash)
+			test.touch(lastmod)
+			test.persist(db)
+
+		# Now find the test result
+		result = fstestdb.Result.resurrect(db, test_run_id = testrun, \
+				test_id = test)
+
+		result.set_relation('result_type_id', result_type)
+		result.set_attr('runtime', int(test_time))
+		result.touch(lastmod)
+
+		# Figure out if we have artifacts from failed tests
+		suffix_stem = new_results_dir + '/' + name.replace('/', '_')
+		for suffix in suffix_files:
+			if result != 'fail':
+				result.set_attr(f'has_{suffix}', False)
+				continue
+
+			has_artifact = False
+			for ext in suffix_files[suffix]:
+				if os.path.isfile(f'{suffix_stem}{ext}'):
+					has_artifact = True
+					break
+			if DEBUG:
+				print((outfile, has_artifact))
+			result.set_attr(f'has_{suffix}', has_artifact)
+
+		if DEBUG:
+			print(result.__dict__)
+		result.persist(db)
+
+def main():
+	p = argparse.ArgumentParser(
+			description = 'Upsert test run details to database.')
+	p.add_argument('db_dir', type = str,
+			help = 'Directory containing database.')
+	p.add_argument('summary_dir', type = str,
+			help = 'Directory containing unpacked test results tarball.')
+	p.add_argument('machine_dir', type = str,
+			help = 'Directory containing test machine configuration.')
+	p.add_argument('result_dir', type = str,
+			help = 'Directory containing preserved test results artifacts.')
+	p.add_argument('machine_id', type = str,
+			help = 'Barely readable hash of the test machine config.')
+	p.add_argument('testrun_id', type = str,
+			help = 'Barely readable hash of the test run config.')
+	args = p.parse_args()
+
+	assert os.path.isdir(args.summary_dir)
+	assert os.path.isdir(args.machine_dir)
+
+	# Read the junit xml report.  fstests didn't always assign a namespace
+	# in the xml document, so the xpath selectors must use a wildcard.
+	# AFAICT etree doesn't let us set a default ns if the file doesn't
+	# specify.
+	xml = ET.parse(f'{args.summary_dir}/result.xml')
+	testsuite = xml.getroot()
+	hostname = testsuite.attrib['hostname']
+
+	# Map test shortnames to fingerprints and test groups.
+	fingerprints = f'{args.summary_dir}/test-fingerprints'
+	with open(fingerprints, mode = 'r', encoding = 'utf-8') as fd:
+		testmap = parse_test_mappings(fd)
+
+	groups = f'{args.summary_dir}/test-groups'
+	testgroups = {}
+	try:
+		with open(groups, mode = 'r', encoding = 'utf-8') as fd:
+			testgroups = parse_test_groups(fd)
+	except FileNotFoundError:
+		# Early test tarballs didn't record group data
+		pass
+
+	# Convert the test -> groups info into group -> tests...
+	groups = {}
+	for test in testgroups:
+		for group in testgroups[test]:
+			if group not in groups:
+				groups[group] = set()
+			groups[group].add(test)
+
+	# Connect to the database
+	db = fstestdb.Database(args.db_dir, readonly = False)
+	starttime = testrun_starttime(args.summary_dir)
+
+	# The last mod time of test results is the greater of the start time
+	# and the mtime of the check.* files.
+	lastmod = report_mtime(args.summary_dir)
+	if lastmod is None or lastmod < starttime:
+		lastmod = starttime
+
+	# Ensure the hash table has an entry for this machine
+	machinehash = fstestdb.Hash.resurrect(db, value = args.machine_id)
+	if machinehash.needs_update(starttime):
+		db.try_begin_update()
+		machinehash.touch(starttime)
+		machinehash.persist(db)
+
+	# Do we need to update this machine's profile?
+	machine = fstestdb.Machine.resurrect(db, hash_id = machinehash)
+	machine_name = fstestdb.MachineName.resurrect(db, name = hostname)
+	if machine.needs_update(starttime) or \
+	   machine_name.needs_update(starttime):
+		db.try_begin_update()
+		fingerprint = f'{args.machine_dir}/fingerprint'
+		blkdev = f'{args.machine_dir}/blk'
+		with open(fingerprint, mode = 'r', encoding = 'utf-8') as fp_fd:
+			with open(blkdev, mode = 'r', encoding = 'utf-8') as blk_fd:
+				parse_machine_fingerprint(machine, fp_fd, blk_fd)
+
+		machine.set_relation('hash_id', machinehash)
+		machine_name.set_relation('machine_id', machine)
+		machine_name.touch(starttime)
+		machine.touch(starttime)
+		machine_name.persist(db)
+
+	# Ensure the hash table has an entry for this test run
+	testrunhash = fstestdb.Hash.resurrect(db, value = args.testrun_id)
+	if testrunhash.needs_update(starttime):
+		db.try_begin_update()
+		testrunhash.touch(starttime)
+		testrunhash.persist(db)
+
+	# Do we need to update this test run's profile?
+	testrun = fstestdb.TestRun.resurrect(db, hash_id = testrunhash)
+	new_testrun_data = testrun.needs_update(starttime)
+	new_results_data = testrun.needs_update(lastmod)
+
+	if not new_testrun_data and not new_results_data:
+		# No new results or testruns, so commit and exit
+		if db.dirty():
+			db.commit_update()
+		return
+
+	# Always update testrun data, since either the profile has changed or
+	# we have new results
+	db.try_begin_update()
+	testrun.set_relation('hash_id', testrunhash)
+	testrun.set_relation('machine_id', machine)
+	testrun.set_relation('machine_name_id', machine_name)
+	parse_summary(testrun, testsuite, args.summary_dir)
+	testrun.set_attr('start_time', starttime)
+	testrun.set_attr('counted', len(testmap))
+	testrun.touch(lastmod)
+	testrun.persist(db)
+
+	if DEBUG:
+		print(machine.__dict__)
+		print(machine_name.__dict__)
+		print(testrun.__dict__)
+		print(testmap)
+		print(testgroups)
+
+	# Persist test fingerprint and short name info to database, preserving
+	# the Test objects for adding results later
+	test_objs = {}
+	for name in testmap:
+		if DEBUG:
+			print(name, testmap[name])
+
+		# Ensure the hash table has an entry for this test
+		testhash = fstestdb.Hash.resurrect(db, value = testmap[name])
+		if testhash.needs_update(starttime):
+			testhash.touch(starttime)
+			testhash.persist(db)
+
+		# Go find the test info
+		test = fstestdb.Test.resurrect(db, hash_id = testhash)
+		test.set_relation('hash_id', testhash)
+		testname = fstestdb.TestName.resurrect(db, name = name)
+
+		test_objs[name] = test
+
+		# Update the test name mappings if they're old and we updated
+		# the test run profile
+		if new_testrun_data and (test.needs_update(starttime) or \
+					 testname.needs_update(starttime)):
+			testname.set_relation('test_id', test)
+			testname.touch(starttime)
+			test.touch(starttime)
+
+			testname.persist(db)
+
+	# Persist test group membership to database if we updated the test run
+	# profile
+	for groupname in groups if new_testrun_data else {}:
+		if DEBUG:
+			print(groupname, groups[groupname])
+
+		group = fstestdb.Group.resurrect(db, name = groupname)
+
+		# Update the group profile
+		if group.needs_update(starttime):
+			group.touch(starttime)
+			group.persist(db)
+
+		for testname in groups[groupname]:
+			if testname not in test_objs:
+				continue
+
+			test = test_objs[testname]
+			member = fstestdb.GroupMember.resurrect(db, \
+					group_id = group, test_id = test)
+
+			# Update the group <-> test mappings
+			if member.needs_update(starttime):
+				member.touch(starttime)
+				member.persist(db)
+
+	# Add test results if the results report has changed since the last
+	# update
+	if new_results_data:
+		parse_test_results(db, args.result_dir, testrun, testmap, \
+				lastmod, testsuite)
+
+	db.commit_update()
+
+if __name__ == '__main__':
+	main()

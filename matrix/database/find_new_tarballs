@@ -1,0 +1,47 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Find the new tarballs
+# Usage: $0 tarball-dir
+
+srcdir="$(readlink -m "$(dirname "$0")")"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -ne 1 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Print a list of files in a directory which are newer than the directory catalog file."
+	echo "Usage: $0 tarball_dir"
+	exit 1
+fi
+
+tarballs="$1"
+catalog="tarballs.list"
+test -d "${tarballs}" || die "tarball dir not present"
+
+cd "${tarballs}"
+
+# Update our finder timestamp
+touch .find_new
+
+# Generate the list of tarballs modified since the last finder timestamp
+newer=()
+test -e "${catalog}" && newer=('-newer' "${catalog}")
+find . "${newer[@]}" -type f \( -name '*.tar.xz' -print0 -o \
+				-name '*.tar.gz' -print0 -o \
+				-name '*.tar.zst' -print0 \) | \
+	xargs -0 stat -c '%Y|%n' 2> /dev/null | \
+	sort -g > "${catalog}.new"
+mv "${catalog}.new" "${catalog}"
+
+# Change the catalog timestamp to match the finder timestamp.  This is to
+# avoid concurrency problems if tarballs get updated after the find command
+# traverses a tarball's directory entry but doesn't finish writing until at
+# least one more timestamp quantum passes.
+touch -r .find_new "${catalog}"
+
+cat "${catalog}"
+exit 0
