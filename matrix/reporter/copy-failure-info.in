@@ -1,0 +1,374 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Generate diffs of the golden output
+# Usage: $0 fstests-dir fstests-results-dir console-output outputdir
+
+fstests_dir="$1"
+results="$2"
+console_output="$3"
+outsnapshot="$4"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+test ! -d "${fstests_dir}" && die "no fstests dir"
+test ! -d "${results}" && die "no results dir"
+test -z "${outsnapshot}" && die "no output dir"
+
+outsummary="${outsnapshot}/summary"
+outresults="${outsnapshot}/results"
+outstats="${outsnapshot}/stats"
+
+FAIL_LOGS=(".out.bad" ".full" ".dmesg" ".kmemleak" ".mountfail")
+TEST_STATS=()
+
+# Maximum file sizes for anything we collect from fstests
+declare -A MAX_FILESIZES
+MAX_FILESIZES[".full"]=262144
+MAX_FILESIZES[".out.diff"]=16384
+MAX_FILESIZES[".out.bad"]=16384
+MAX_FILESIZES[".dmesg"]=16384
+MAX_FILESIZES[".kmemleak"]=16384
+MAX_FILESIZES[".mountfail"]=16384
+MAX_FILESIZES["console.txt"]=65536
+
+# Multiply the above max sizes by this factor; this is the maximum amount
+# of information that we'll feed to a compressor.
+COMPRESSION_SRC_FACTOR=2
+
+# Compress to this level
+COMPRESSION_LEVEL=9
+
+# Supported compression schemes
+COMPRESSION=(".gz" ".bz2" ".lz4" ".xz" ".zst" ".br")
+
+declare -A COMPRESSORS
+COMPRESSORS[".gz"]="gzip"
+COMPRESSORS[".bz2"]="bzip2"
+COMPRESSORS[".lz4"]="lz4"
+COMPRESSORS[".xz"]="xz"
+COMPRESSORS[".zst"]="zstd"
+COMPRESSORS[".br"]="brotli"
+
+DEFAULT_COMPRESSOR=".br"
+
+# Make sure our destination directory structure exists
+cd "${results}/" || exit
+mkdir -p "${outsummary}" "${outresults}" "${outstats}"
+
+if [ ! -e check.failures ] && [ ! -e "${outsummary}/result.xml" ]; then
+	die "Unknown test report format"
+fi
+
+# Extract file extension from filenames
+fileext()
+{
+	echo "$@" | sed -e 's/^.*\(\..*\)$/\1/g' -e '/^[^.]/d'
+}
+
+# Is this file extension really a compression format?
+is_compressed()
+{
+	local compr
+
+	for compr in "${COMPRESSION[@]}"; do
+		test "$1" = "${compr}" && return 0
+	done
+	return 1
+}
+
+# Should we process a compressed log file over an uncompressed version?
+want_compressed_logfile()
+{
+	local src="$1"
+	local logtype="$2"
+	local compr="$3"
+
+	# Compressed version has to exist.
+	test -f "${src}${logtype}${compr}" || return 1
+
+	# Compressed version is newer than the uncompressed version or there is
+	# no uncompressed version.
+	test "${src}${logtype}${compr}" -nt "${src}${logtype}"
+}
+
+# Should we regenerate the dest file from the source file?
+want_dest_update()
+{
+	local src_path="$1"
+	local dst_path="$2"
+
+	# Clear out any file type on the dest that we don't create ourselves.
+	if [ ! -L "${dst_path}" ] && [ ! -f "${dst_path}" ]; then
+		if [ -d "${dst_path}" ]; then
+			rmdir "${dst_path}"
+		else
+			rm -f "${dst_path}"
+		fi
+	fi
+
+	# If the destination exists and the source path is the same age or
+	# older than the destination path, we don't need to do anything.
+	if [ -e "${dst_path}" ] && [ ! "${src_path}" -nt "${dst_path}" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+# Move timestamp from source to dest so that we can detect stale dest files.
+finish_dest_update()
+{
+	local src_path="$1"
+	local dst_path="$2"
+
+	touch --reference="${src_path}" --no-create "${dst_path}"
+}
+
+# Preserve or excerpt a compressed log file.
+preserve_compressed_logfile()
+{
+	local src="$1"
+	local dst="$2"
+	local logtype="$3"
+	local compr="$4"
+	local maxfilesize="${MAX_FILESIZES["${logtype}"]}"
+	local compressor="${COMPRESSORS["${compr}"]}"
+	local src_size
+	local compr_size
+
+	local src_path="${src}${logtype}${compr}"
+	local dst_path="${dst}${logtype}${compr}"
+
+	test -e "${src_path}" || return 1
+
+	want_dest_update "${src_path}" "${dst_path}" || return
+
+	# If the compressed size is less than max file size, just link it
+	# and delete any uncompressed log file on the destination.
+	src_size="$(stat -c '%s' "${src_path}")"
+	if (( src_size < maxfilesize )); then
+		test -d "${dst_path}" && rmdir "${dst_path}"
+		ln -s -f "${src_path}" "${dst_path}" && \
+			rm -f "${dst}${logtype}"
+		return
+	fi
+
+	# Otherwise, delete dst_path if it's a symlink, excerpt the compressed
+	# file, and delete any uncompressed file in the dest dir.
+	test -L "${dst_path}" && rm -f "${dst_path}"
+
+	# Decompress the file, excerpt it, and recompress that.
+	compr_size=$((COMPRESSION_SRC_FACTOR * maxfilesize))
+	"${compressor}" -d < "${src_path}" | \
+			head -c "${compr_size}" | \
+			"${compressor}" "-${COMPRESSION_LEVEL}" > "${dst_path}" && \
+		rm -f "${dst}${logtype}"
+	finish_dest_update "${src_path}" "${dst_path}"
+}
+
+# Preserve or excerpt an uncompressed log file.
+preserve_uncompressed_logfile()
+{
+	local src="$1"
+	local dst="$2"
+	local logtype="$3"
+	local maxfilesize="${MAX_FILESIZES["${logtype}"]}"
+	local compressor="${COMPRESSORS["${DEFAULT_COMPRESSOR}"]}"
+	local src_size
+	local compr_size
+
+	local src_path="${src}${logtype}"
+	local dst_path="${dst}${logtype}"
+
+	test -e "${src_path}" || return 1
+
+	# This is a small file; link it without compressing it.
+	src_size="$(stat -c '%s' "${src_path}")"
+	if (( src_size < maxfilesize )); then
+
+		want_dest_update "${src_path}" "${dst_path}" || return
+
+		test -d "${dst_path}" && rmdir "${dst_path}"
+		ln -s -f "${src_path}" "${dst_path}"
+		return
+	fi
+
+	# If our chosen compressor is not available, excerpt the file.
+	if ! command -v "${compressor}" &>/dev/null; then
+		want_dest_update "${src_path}" "${dst_path}" || return
+
+		head -c "${maxfilesize}" < "${src_path}" > "${dst_path}"
+		finish_dest_update "${src_path}" "${dst_path}"
+		return
+	fi
+
+	# Let's see if the compressed version is somehow newer than the
+	# source file.  If so, skip it.
+	dst_path="${dst_path}${compr}"
+	want_dest_update "${src_path}" "${dst_path}" || return
+
+	# Otherwise, delete dst_path if it's a symlink, excerpt the
+	# uncompressed file, and compress the output.
+	test -L "${dst_path}" && rm -f "${dst_path}"
+	compr_size=$((COMPRESSION_SRC_FACTOR * maxfilesize))
+	head -c "${compr_size}" "${src_path}" | \
+			"${compressor}" "-${COMPRESSION_LEVEL}" > "${dst_path}" && \
+		rm -f "${dst}${logtype}"
+	finish_dest_update "${src_path}" "${dst_path}"
+}
+
+# Preserve a possibly compressed log file.
+preserve_logfile()
+{
+	local src="$1"
+	local dst="$2"
+	local logtype="$3"
+	local compr
+
+	# Check for a compressed source file...
+	for compr in "${COMPRESSION[@]}"; do
+		if want_compressed_logfile "${src}" "${logtype}" "${compr}"; then
+			preserve_compressed_logfile "${src}" "${dst}" "${logtype}" "${compr}"
+			return
+		fi
+	done
+
+	preserve_uncompressed_logfile "${src}" "${dst}" "${logtype}"
+}
+
+# Create a golden output diff from a compressed bad output file.
+diff_compressed_golden()
+{
+	local orig="$1"
+	local src="$2"
+	local dst="$3"
+	local compr="$4"
+	local badout="${src}.out.bad${compr}"
+	local golden="${orig}.out"
+	local diff="${dst}.out.diff"
+	local maxfilesize="${MAX_FILESIZES[".out.diff"]}"
+	local compressor="${COMPRESSORS["${compr}"]}"
+
+	test -f "${badout}" || return 1
+	command -v "${compressor}" &>/dev/null || return 1
+
+	want_dest_update "${badout}" "${diff}" || return
+
+	diff -Naurp --label "${src}.out.bad" "${golden}" <("${compressor}" -d < "${badout}") | \
+		head -c "${maxfilesize}" > "${diff}"
+	finish_dest_update "${badout}" "${diff}"
+}
+
+# Create a golden output diff from a compressed bad output file.
+diff_uncompressed_golden()
+{
+	local orig="$1"
+	local src="$2"
+	local dst="$3"
+	local badout="${src}.out.bad"
+	local golden="${orig}.out"
+	local diff="${dst}.out.diff"
+	local maxfilesize="${MAX_FILESIZES[".out.diff"]}"
+
+	test -f "${badout}" || return 1
+
+	want_dest_update "${badout}" "${diff}" || return
+
+	diff -Naurp "${golden}" "${badout}" | head -c "${maxfilesize}" > "${diff}"
+	finish_dest_update "${badout}" "${diff}"
+}
+
+# Create a golden output diff from a possibly compressed bad output file.
+diff_golden()
+{
+	local orig="$1"
+	local src="$2"
+	local dst="$3"
+	local compr
+
+	for compr in "${COMPRESSION[@]}"; do
+		if [ -e "${src}.out.bad${compr}" ]; then
+			diff_compressed_golden "${orig}" "${src}" "${dst}" "${compr}"
+			return
+		fi
+	done
+
+	diff_uncompressed_golden "${orig}" "${src}" "${dst}"
+}
+
+# Print failing tests from the results.xml file
+dump_failures() {
+	if [ -e "${outsummary}/result.xml" ]; then
+		# flatten xunit file, extract failed list...
+		awk -f "%pkg_lib_dir%/xunit_failed.awk" < "${outsummary}/result.xml" | \
+			sed -e 's/^.*name="//g' -e 's/".*$//g'
+	fi
+}
+
+# Handle files that are collected for failed tests.
+readarray -t targets < <(dump_failures)
+for target in "${targets[@]}"; do
+	orig="${fstests_dir}/tests/${target}"
+	src="${results}/${target}"
+	dst="${outresults}/${target}"
+
+	mkdir -p "$(dirname "${dst}")"
+
+	diff_golden "${orig}" "${src}" "${dst}"
+
+	for logtype in "${FAIL_LOGS[@]}"; do
+		preserve_logfile "${src}" "${dst}" "${logtype}"
+	done
+done
+
+# Preserve console output, if it's a regular file.  Note the trailing slashes
+# because we consider "console.txt" to be its own log type.
+if [ -f "${console_output}" ]; then
+	ln -s -f "${console_output}" "${results}/console.txt"
+	preserve_logfile "${results}/" "${outresults}/" "console.txt"
+fi
+
+# Link statistics information into a subdir of the output dir
+dump_stats() {
+	local args=()
+	for pattern in "${TEST_STATS[@]}"; do
+		test "${#args[@]}" -ne 0 && args+=(-o)
+		args+=(-name "*${pattern}*" -print)
+	done
+	if [ "${#args[@]}" -gt 0 ]; then
+		find "${results}/" "${args[@]}"
+	fi
+}
+
+readarray -t targets < <(dump_stats)
+for target in "${targets[@]}"; do
+	# Extract first file extension, see if it's compressed.
+	ext="$(fileext "${target}")"
+	test -z "${ext}" && continue
+
+	unset compr
+	if is_compressed "${ext}"; then
+		compr="${ext}"
+		target="${target%${ext}}"
+		ext="$(fileext "${target}")"
+	fi
+
+	# Extract another file extension to figure out its type
+	test -z "${ext}" && continue
+	logtype="${ext}"
+
+	src="${target%${ext}}"
+	dst="${outstats}/${src#${results}}"
+
+	mkdir -p "$(dirname "${dst}")"
+
+	if [ -n "${compr}" ]; then
+		preserve_compressed_logfile "${src}" "${dst}" "${logtype}" "${compr}"
+	else
+		preserve_uncompressed_logfile "${src}" "${dst}" "${logtype}"
+	fi
+done

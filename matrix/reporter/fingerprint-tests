@@ -1,0 +1,58 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Fingerprint the tests coming in on stdin and print the map
+# Usage: $0 fstests-dir
+
+import sys
+import hashlib
+import re
+
+qatest = re.compile('FS\s*QA\s*Test')
+qatest = re.compile('FS.*QA.*Test.*[0-9]')
+
+# We fingerprint a test file by computing the hash of everything in the
+# first comments area after the 'FS QA Test No. XXX' to insulate ourselves
+# from renumbering or random test cleanups.
+def fingerprint(testdir, testname, fingerprints):
+	def descr_lines():
+		yet = False
+		with open('%s/tests/%s' % (testdir, testname), mode = 'r', encoding = 'utf-8') as fd:
+			for line in fd:
+				stripline = line.strip()
+				if len(stripline) < 2:
+					continue
+				if stripline[0] != '#':
+					return
+				if not yet:
+					if qatest.search(line) != None:
+						yet = True
+					if not yet:
+						continue
+				yield line
+	m = hashlib.sha256()
+	any_lines = False
+	for descr_line in descr_lines():
+		m.update(descr_line.encode('utf-8'))
+		any_lines = True
+	if not any_lines:
+		return
+	fingerprints[testname] = m.hexdigest()
+
+def main():
+	testdir = sys.argv[1]
+	fingerprints = {}
+	for line in sys.stdin:
+		fingerprint(testdir, line.strip(), fingerprints)
+	fingerset = set()
+	for test in fingerprints:
+		hash = fingerprints[test]
+		if hash in fingerset:
+			print('WARNING: %s has duplicate fingerprint.' % test, file = sys.stderr)
+		fingerset.add(hash)
+
+	for test in sorted(fingerprints):
+		print("%s\t%s" % (test, fingerprints[test]))
+
+if __name__ == '__main__':
+	main()

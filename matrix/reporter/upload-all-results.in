@@ -1,0 +1,52 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Upload all the test result info from all runs
+# Usage: $0 output-dir [urls...]
+
+scriptdir="$(dirname "$0")"
+
+outdir="$1"
+shift
+
+REPORTER_URLS=()
+
+test -r "%etc_dir%/fstmatrix-reporter" && . "%etc_dir%/fstmatrix-reporter"
+
+for url in "$@"; do
+	REPORTER_URLS+=("${url}")
+done
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+test -z "${outdir}" && die "no output dir"
+test ! -d "${outdir}/tarballs" && die "no tarballs found"
+test "${#REPORTER_URLS[@]}" -gt 0 || die "no urls configured"
+
+curl=(curl --silent --show-error --request POST --max-time 90 --fail)
+curl+=(--header "Content-Type: application/octet-stream")
+
+cd "${outdir}/tarballs/"
+
+find_tarballs() {
+	local newer=()
+
+	test -e .upload && newer+=(-newer .upload)
+	find . "${newer[@]}" -type f \( -name '*.tar.xz' -print -o \
+					-name '*.tar.gz' -print -o \
+					-name '*.tar.zst' -print \)
+}
+
+while read tarball; do
+	test -s "${tarball}" || continue
+	tb="$(basename "${tarball}")"
+	echo "Uploading ${tb}..."
+	for url in "${REPORTER_URLS[@]}"; do
+		while ! "${curl[@]}" --data-binary "@${tb}" "${url}?fname=${tb}"; do sleep 2; done &
+	done
+	wait
+done < <(find_tarballs)
+touch .upload

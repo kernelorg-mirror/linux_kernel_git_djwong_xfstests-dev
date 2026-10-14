@@ -1,0 +1,142 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Collect all the test result info from a given run
+# Usage: $0 fstests-dir fstests-results-dir console-output output-dir
+
+scriptdir="$(dirname "$0")"
+
+fstests_dir="$1"
+results="$2"
+console_output="$3"
+outdir="$4"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+test ! -d "${fstests_dir}" && die "no fstests dir"
+test ! -d "${results}" && die "no fstests results dir"
+test -z "${outdir}" && die "no output dir"
+
+if [ ! -e "${results}/check.starttime" ]; then
+	if [ -e "${results}/result.xml" ]; then
+		# We don't have the start time recorded.  See if we can extract
+		# it from the xunit report.
+		xunit_starttime="$("${scriptdir}/starttime" "${results}/result.xml")"
+
+		# If parsing result.xml fails for any reason (e.g. reporter
+		# racing with fstests that hasn't generated a report yet),
+		# leave the check.starttime file blank and we'll put in the
+		# current time below.
+		if [ -n "${xunit_starttime}" ]; then
+			date --date="${xunit_starttime}" '+%s' > "${results}/check.starttime" 2>/dev/null || \
+				rm -f "${results}/check.starttime"
+		fi
+	fi
+	if [ ! -s "${results}/check.starttime" ]; then
+		# Otherwise we'll just use the current time.
+		date '+%s' > "${results}/check.starttime"
+	fi
+fi
+raw_starttime="$(cat "${results}/check.starttime")"
+
+hostname="$(hostname | tr './' '__')"
+test -z "${hostname}" && hostname="unknown"
+starttime="$(TZ=UTC date --date="@${raw_starttime}" '+%Y-%m-%d_%H-%M-%S')"
+tarballs="${outdir}/tarballs"
+
+if command -v zstd &>/dev/null; then
+	tarball="${tarballs}/${hostname}_${starttime}.tar.zst"
+	compressor=(zstd -9)
+elif command -v gzip &>/dev/null; then
+	tarball="${tarballs}/${hostname}_${starttime}.tar.gz"
+	compressor=(gzip)
+elif command -v xz &>/dev/null; then
+	tarball="${tarballs}/${hostname}_${starttime}.tar.xz"
+	compressor=(xz)
+fi
+
+outsnapshot="${outdir}/${starttime}"
+outsummary="${outsnapshot}/summary"
+outresults="${outsnapshot}/results"
+outmachine="${outsnapshot}/machine"
+machine="${results}/machine"
+
+# Create basic output directory structure for tarballing
+mkdir -p "${outsummary}" "${outresults}"
+
+# Fingerprint the machine if we haven't already
+if [ ! -d "${outmachine}" ]; then
+	rm -r -f "${outmachine}"
+	mkdir -p "${outmachine}"
+	"${scriptdir}/fingerprint-machine" "${outmachine}"
+fi
+
+# Find all groupfiles under the fstests directory.
+list_groupfiles()
+{
+	find "${fstests_dir}/tests/" -name group -print -o -name group.list -print
+}
+
+# Fingerprint the test files and groups if we haven't already
+list_tests()
+{
+	# Make a list of every test mentioned in a test/*/group file.
+	list_groupfiles | while read grpfile; do
+		dir="$(dirname "${grpfile}")"
+		groupname="$(basename "${dir}")"
+		while read testcase groups; do
+			test -n "${testcase}" || continue
+			fname="${dir}/${testcase}"
+			test -e "${fname}" && \
+				echo "${groupname}/${testcase} ${groups}"
+		done < "${grpfile}"
+	done
+}
+if [ ! -e "${outsummary}/test-fingerprints" ]; then
+	list_tests | sort > "${outsummary}/test-groups"
+	awk '{print $1}' < "${outsummary}/test-groups" | \
+		"${scriptdir}/fingerprint-tests" "${fstests_dir}" > \
+		"${outsummary}/test-fingerprints"
+fi
+
+# Save an abbreviated version of the xunit output if ./check has updated the
+# report since the last time we ran.
+fstests_summary="$(readlink -m "${results}/result.xml")"
+fstmatrix_summary="$(readlink -m "${outsummary}/result.xml")"
+if [ "${fstests_summary}" -nt "${fstmatrix_summary}" ]; then
+	awk -v kernel="$(uname -r)" -f "%pkg_lib_dir%/xunit_rollup.awk" \
+		< "${fstests_summary}" > "${fstmatrix_summary}"
+fi
+
+# Link live(?) fstests results into output directory.
+cd "${results}"
+for file in check.*; do
+	test -e "${outsummary}/${file}" || \
+		ln -s -f "${results}/${file}" "${outsummary}/"
+done
+"${scriptdir}/copy-failure-info" "${fstests_dir}" "${results}" "${console_output}" "${outsnapshot}"
+
+# Tarball everything, being careful not to disturb the tarball unless
+# something really changed.
+cd "${outsnapshot}/"
+mkdir -p "${tarballs}"
+if [ -e last_report ] && [ "$(find -L . -newercc last_report | wc -l)" -eq 0 ]; then
+	exit 0
+fi
+touch last_report
+tar ch summary machine results stats | "${compressor[@]}" > "${tarball}.new"
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+	exit 1
+fi
+
+old_hash="$(sha256sum "${tarball}" 2> /dev/null)"
+new_hash="$(sha256sum "${tarball}.new")"
+if [ "${old_hash}" != "${new_hash}" ]; then
+	mv "${tarball}.new" "${tarball}"
+else
+	rm -f "${tarball}.new"
+fi
+exit 0

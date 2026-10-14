@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Extract the start time (or the report time) from the results.xml file
+# Usage: $0 path/to/results.xml
+
+import sys
+import json
+import sqlite3
+import os
+import argparse
+import xml.etree.ElementTree as ET
+
+def main():
+	p = argparse.ArgumentParser(
+			description = 'Extract timestamp from results.xml.')
+	p.add_argument('xmlfile', type = str,
+			help = 'Path to results.xml.')
+	args = p.parse_args()
+
+	# Read the junit xml report.  fstests didn't always assign a namespace
+	# in the xml document, so the xpath selectors must use a wildcard.
+	# AFAICT etree doesn't let us set a default ns if the file doesn't
+	# specify.
+	xml = ET.parse(f'{args.xmlfile}')
+	testsuite = xml.getroot()
+
+	if 'start_timestamp' in testsuite.attrib:
+		print(testsuite.attrib['start_timestamp'])
+	else:
+		print(testsuite.attrib['timestamp'])
+	sys.exit(0)
+
+if __name__ == '__main__':
+	main()

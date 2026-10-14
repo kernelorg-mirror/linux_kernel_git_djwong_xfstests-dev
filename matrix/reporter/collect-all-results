@@ -1,0 +1,30 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Collect all the test result info from all runs
+# Usage: $0 fstests-dir results-base console-output output-dir
+
+scriptdir="$(dirname "$0")"
+
+fstests_dir="$1"
+resultbase="$2"
+console_output="$3"
+outdir="$4"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+test ! -d "${fstests_dir}" && die "no fstests dir"
+test -z "${outdir}" && die "no output dir"
+test ! -d "${resultbase}" && die "no fstests results dir"
+
+find_checkfiles() {
+	find "${resultbase}/" -name result.xml -print 2> /dev/null
+}
+
+find_checkfiles | while read checkfile; do
+	results="$(dirname "${checkfile}")"
+	"${scriptdir}/collect-results" "${fstests_dir}" "${results}" "${console_output}" "${outdir}"
+done
