@@ -1,0 +1,56 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2018-2026 Oracle.
+# Generate json file for dashboard from database
+
+dbdir="$1"
+dashdir="$2"
+urlprefix="$3"
+
+# Exit if no database or no url prefix
+test -e "${dbdir}/fstests.db" || exit 0
+test -n "${urlprefix}" || exit 0
+
+# If the database is newer than the output files (if they're missing, -nt
+# returns 0) and more than a day has gone by, generate the bot files
+# Regenerate the -all files if more than a day has gone by since we did that.
+want_generate_all() {
+	local db_mtime js_mtime rss_mtime
+	local spd=$((60 * 60 * 24))	# seconds per day
+
+	db_mtime="$(stat -c '%Y' "${dbdir}/fstests.db" 2>/dev/null)"
+	js_mtime="$(stat -c '%Y' "${dashdir}/fstestsall.js.br" 2>/dev/null)"
+	test -z "${js_mtime}" && js_mtime=0
+	rss_mtime="$(stat -c '%Y' "${dashdir}/fstestsall.rss.br" 2>/dev/null)"
+	test -z "${rss_mtime}" && rss_mtime=0
+
+	test "$(( (js_mtime / spd) ))" -lt "$(( (db_mtime / spd) ))" && return 0
+	test "$(( (rss_mtime / spd) ))" -lt "$(( (db_mtime / spd) ))" && return 0
+
+	return 1
+}
+
+if want_generate_all; then
+	"%pkg_libexec_dir%/query_all_test_runs" \
+		--json "${dashdir}/fstestsall.js" \
+		--rss  "${dashdir}/fstestsall.rss" \
+		--urlprefix "${urlprefix}" \
+		--compress \
+		"${dbdir}"
+fi
+
+# If the database is newer than the output files (if they're missing, -nt
+# returns 0), generate the bot files
+want_generate_bot() {
+	test "${dbdir}/fstests.db" -nt "${dashdir}/fstestsbot.js" && return 0
+	test "${dbdir}/fstests.db" -nt "${dashdir}/fstestsbot.rss" && return 0
+	return 1
+}
+
+if want_generate_bot; then
+	"%pkg_libexec_dir%/query_recent_test_runs" --max-age %bot_age% \
+		--json "${dashdir}/fstestsbot.js" \
+		--rss  "${dashdir}/fstestsbot.rss" \
+		--urlprefix "${urlprefix}" \
+		"${dbdir}"
+fi

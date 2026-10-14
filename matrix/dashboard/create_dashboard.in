@@ -1,0 +1,77 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Create a web dashboard directory
+# Usage: $0 fsmatrix-dir webdir
+
+srcdir="$(dirname "$0")"
+fsmatrix="$1"
+webdir="$2"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+print_help() {
+	echo "Create a web dashboard directory."
+	echo "Usage: $0 database_dir webdir"
+}
+
+if [ -z "$1" ] || [ -z "$2" ] || [ "$1" = "--help" ]; then
+	print_help
+	exit 1
+fi
+
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+
+owner_str="%fstmatrix_user%:%fstmatrix_user%"
+
+try_chown() {
+	local tgt_str="$(stat -c '%U:%G' "$2")"
+	if [ "$tgt_str" != "$1" ]; then
+		chown -R "$1" "$2"
+	fi
+}
+
+mkdir -p "${webdir}"
+test "${webdir}/../database" -ef "${fsmatrix}" || \
+	die "${fsmatrix}: not the same dir as ${webdir}"
+
+for i in %dash_files%; do
+	ln -s -f "%pkg_share_dir%/$i" "${webdir}/"
+done
+if [ ! -e "${webdir}/output" ]; then
+	ln -s -f "../database/machines" "${webdir}/output"
+fi
+
+try_chown "${owner_str}" "${webdir}"
+
+# Make sure we have at least a stub of json and rss files
+jsfile="${webdir}/fstestsbot.js"
+if [ ! -f "${jsfile}" ]; then
+	rm -r -f "${jsfile}"
+	echo "[ ]" > "${jsfile}"
+	chown "${owner_str}" "${jsfile}"
+fi
+
+rssfile="${webdir}/fstestsbot.rss"
+if [ ! -f "${rssfile}" ]; then
+	rm -r -f "${rssfile}"
+	echo "<?xml version='1.0' encoding='UTF-8'?><rss version="2.0"></rss>" > "${rssfile}"
+	chown "${owner_str}" "${rssfile}"
+fi
+jsfile="${webdir}/fstestsall.js.br"
+if [ ! -f "${jsfile}" ]; then
+	rm -r -f "${jsfile}"
+	echo "[ ]" | brotli -9 > "${jsfile}"
+	chown "${owner_str}" "${jsfile}"
+fi
+
+rssfile="${webdir}/fstestsall.rss.br"
+if [ ! -f "${rssfile}" ]; then
+	rm -r -f "${rssfile}"
+	echo "<?xml version='1.0' encoding='UTF-8'?><rss version="2.0"></rss>" | brotli -9 > "${rssfile}"
+	chown "${owner_str}" "${rssfile}"
+fi

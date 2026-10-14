@@ -1,0 +1,38 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2018-2026 Oracle.
+# Configure fstests dashboard regeneration
+
+if [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Usage: $0 [urlprefix|--disable]"
+	exit 1
+fi
+
+override_dir="%systemd_services_conf_dir%/fstmatrix-dashboard.service.d"
+override_file="${override_dir}/override.conf"
+
+if [ "$1" = "--disable" ]; then
+	systemctl stop fstmatrix-dashboard.service
+	systemctl disable fstmatrix-dashboard.service
+
+	rm -f "${override_file}"
+	rmdir --ignore-fail-on-non-empty "${override_dir}"
+	systemctl daemon-reload
+
+	exit
+fi
+
+mkdir -p "${override_dir}"
+cat > "${override_file}" << ENDL
+# Configured with config-fstests-dashboard
+
+[Service]
+Environment=URLPREFIX=$1
+
+[Install]
+WantedBy=multi-user.target
+ENDL
+
+systemctl daemon-reload
+systemctl enable fstmatrix-dashboard.service
+systemctl restart fstmatrix-dashboard.service

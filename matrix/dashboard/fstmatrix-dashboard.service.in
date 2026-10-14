@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+
+[Unit]
+Description=Update fstests Dashboard
+
+[Service]
+User=fstmatrix
+Group=fstmatrix
+PrivateTmp=yes
+Environment=HOME=%fstmatrix_home_dir%/
+Nice=19
+ExecStart=%bin_dir%/every 5m %pkg_libexec_dir%/stow_dashboard %fstmatrix_inst_dir%/database %fstmatrix_inst_dir%/www $URLPREFIX
+
+# Note: Please add a unit override file to define Environment=URLPREFIX=
