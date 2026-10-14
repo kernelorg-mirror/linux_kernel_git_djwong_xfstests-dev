@@ -1,0 +1,23 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+# Create an fstests collector
+
+if [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Usage: $0 instance_dir"
+	exit 1
+fi
+
+fstmatrix_inst_dir="$1"
+
+if [ ! -e "${fstmatrix_inst_dir}/database/fstests.db" ]; then
+	su - "%fstmatrix_user%" -s /bin/sh -c "%pkg_libexec_dir%/create_db \"${fstmatrix_inst_dir}/database\""
+fi
+
+if [ ! -e "${fstmatrix_inst_dir}/www/index.html" ]; then
+	su - "%fstmatrix_user%" -s /bin/sh -c "%pkg_libexec_dir%/create_dashboard \"${fstmatrix_inst_dir}/database\" \"${fstmatrix_inst_dir}/www\""
+fi
+
+if [ ! -e "${fstmatrix_inst_dir}/www/uploader.php" ]; then
+	su - "%fstmatrix_user%" -s /bin/sh -c "%pkg_libexec_dir%/create_collector \"${fstmatrix_inst_dir}/database\" \"${fstmatrix_inst_dir}/www\""
+fi

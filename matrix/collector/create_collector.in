@@ -1,0 +1,50 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Create an fstests collector
+# Usage: $0 fsmatrix-dir webdir
+
+srcdir="$(dirname "$0")"
+fsmatrix="$1"
+webdir="$2"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+print_help() {
+	echo "Create a results collector."
+	echo "Usage: $0 database_dir webdir"
+}
+
+if [ -z "$1" ] || [ -z "$2" ] || [ "$1" = "--help" ]; then
+	print_help
+	exit 1
+fi
+
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+
+# Reset permissions on /most/ of the fstmatrix directories.
+# Be careful to leave the tarball socket ownership alone!
+owner_str="%fstmatrix_user%:%fstmatrix_user%"
+try_chown() {
+	tgt_str="$(stat -c '%U:%G' "$2")"
+	if [ "$tgt_str" != "$1" ]; then
+		chown -R "$1" "$2"
+	fi
+}
+
+mkdir -p "${webdir}"
+mkdir -p "${webdir}/../tarballs"
+test "${webdir}/../database" -ef "${fsmatrix}" || \
+	die "${fsmatrix}: not the same dir as ${webdir}"
+
+try_chown "$owner_str" "${webdir}/../tarballs"
+
+for i in uploader.php; do
+	ln -s -f "%pkg_share_dir%/$i" "${webdir}/"
+done
+
+exit 0

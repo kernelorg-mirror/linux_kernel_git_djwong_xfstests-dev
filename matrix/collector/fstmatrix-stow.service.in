@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+
+[Unit]
+Description=Stow fstests Tarballs in Matrix
+
+[Service]
+Type=oneshot
+User=%fstmatrix_user%
+Group=%fstmatrix_user%
+PrivateTmp=yes
+Environment=HOME=%fstmatrix_home_dir%/
+ExecStart=%pkg_libexec_dir%/stow_tarballs %fstmatrix_inst_dir%/database %fstmatrix_inst_dir%/tarballs
+Nice=19

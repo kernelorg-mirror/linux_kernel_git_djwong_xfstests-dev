@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+
+[Unit]
+Description=Receive fstests Results Tarball
+
+[Service]
+Type=simple
+Environment=HOME=%fstmatrix_home_dir%/
+ExecStart=%sbin_dir%/socky -I -i -o -- %pkg_libexec_dir%/receive_tarball
+StandardInput=socket
+StandardOutput=journal
+StandardError=journal
+User=%fstmatrix_user%
+WorkingDirectory=%fstmatrix_inst_dir%/tarballs/
