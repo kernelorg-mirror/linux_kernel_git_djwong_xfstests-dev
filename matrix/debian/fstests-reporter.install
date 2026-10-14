@@ -1,0 +1,16 @@
+/usr/lib/systemd/system/fstmatrix-reporter.service
+/usr/lib/systemd/system/fstmatrix-reporter.timer
+/usr/bin/fstests-reporter
+/usr/libexec/fstmatrix/collect-all-results
+/usr/libexec/fstmatrix/collect-results
+/usr/libexec/fstmatrix/copy-failure-info
+/usr/libexec/fstmatrix/fingerprint-machine
+/usr/libexec/fstmatrix/fingerprint-tests
+/usr/libexec/fstmatrix/fstmatrix-reporter
+/usr/libexec/fstmatrix/fstmatrix-want-reporter
+/usr/libexec/fstmatrix/starttime
+/usr/libexec/fstmatrix/upload-all-results
+/usr/lib/fstmatrix/xunit_failed.awk
+/usr/lib/fstmatrix/xunit_rollup.awk
+/usr/share/man/man1/fstests-reporter.1
+/etc/fstmatrix-reporter

@@ -1,0 +1,10 @@
+/usr/lib/systemd/system/fstmatrix-receive.socket
+/usr/lib/systemd/system/fstmatrix-receive.service
+/usr/lib/systemd/system/fstmatrix-stow.service
+/usr/lib/systemd/system/fstmatrix-stow.timer
+/usr/libexec/fstmatrix/receive_tarball
+/usr/libexec/fstmatrix/create_collector
+/usr/share/fstmatrix/uploader.php
+/usr/sbin/create-fstests-collector
+/usr/share/man/man8/create-fstests-collector.8
+/usr/lib/sysusers.d/fstmatrix.conf

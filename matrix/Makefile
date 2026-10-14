@@ -125,6 +125,10 @@ service_files=\
 sysusers_files=\
 	collector/fstmatrix.conf
 
+debian=\
+	debian/fstests-collector.postinst \
+	debian/fstests-dashboard.postinst
+
 dash_files=\
 	index.html \
 	all.html \
@@ -158,6 +162,8 @@ built_files=\
 	database/query_recent_test_runs \
 	database/query_test_run \
 	database/upsert_test_run \
+	debian/fstests-collector.postinst \
+	debian/fstests-dashboard.postinst \
 	reporter/collect-results \
 	reporter/copy-failure-info \
 	reporter/fstests-reporter \
@@ -173,7 +179,7 @@ built_files=\
 	collector/create-fstests-collector \
 	collector/fstmatrix.conf
 
-all: $(libprogs) $(libfiles) $(progs) $(service_files) $(wwwfiles) $(configfiles) $(sbinprogs) $(sysusers_files)
+all: $(libprogs) $(libfiles) $(debian) $(progs) $(service_files) $(wwwfiles) $(configfiles) $(sbinprogs) $(sysusers_files)
 
 clean:;
 	rm -f $(built_files)

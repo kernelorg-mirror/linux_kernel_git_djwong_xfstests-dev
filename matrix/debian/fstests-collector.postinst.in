@@ -1,0 +1,22 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# If socky is running, the (noaccept) socket restart may fail because the
+# service is still running (and hence still hanging on to the socket).  Force
+# the service to stop, and *then* we can restart the socket.
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
+        if [ -d /run/systemd/system ] && [ "$(systemctl is-active djwong-sensors-update.socket 2>/dev/null)" != "active" ]; then
+                if [ -n "$2" ]; then
+                        _dh_action=restart
+                else
+                        _dh_action=start
+                fi
+                deb-systemd-invoke stop 'djwong-sensors-update.service' >/dev/null || true
+                deb-systemd-invoke $_dh_action 'djwong-sensors-update.socket' >/dev/null || true
+        fi
+fi
+
+create-fstests-collector "%fstmatrix_inst_dir%"
+
+exit 0
