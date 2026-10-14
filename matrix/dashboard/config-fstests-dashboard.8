@@ -1,0 +1,20 @@
+.TH CONFIG-DASHBOARD "1" "June 2025" "fstests-dashboard"
+.SH NAME
+config-fstests-dashboard - Configure fstests dashboard live feed
+.SH SYNOPSYS
+.B
+config-fstests-dashboard [urlprefix|--disable]
+.SH DESCRIPTION
+Configure the fstests dashboard and enable automatic reporting of raw test
+results (aka json data file regeneration).
+If the
+.B --disable
+option is given, then the automatic reporting is disabled and the configuration
+removed.
+Otherwise, the first argument is treated as a URL prefix.
+Automatic reporting is configured to point to that URL prefix, and begun.
+
+.SH AUTHOR
+Oracle
+.SH COPYRIGHT
+Copyright ©2026 Oracle.  License is GPLv2+. <http://www.gnu.org/licenses/gpl-2.0.html>

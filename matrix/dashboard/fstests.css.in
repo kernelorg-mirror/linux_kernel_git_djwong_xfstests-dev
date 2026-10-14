@@ -1,0 +1,183 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (c) 2018-2026 Oracle.
+ */
+body {
+	margin: 0px;
+	padding: 0px;
+	font-family: %dashboard_fonts%;
+	background: #f7f7f7;
+}
+h2 {
+	margin: 0em;
+}
+.resultslink {
+	text-decoration: none;
+}
+.balloontab {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min-content, 24em));
+	gap: 1em;
+	padding: 1em;
+	justify-content: center;
+}
+.balloon {
+	padding: 0.7em;
+	border: 1px solid #c0c0c0;
+	border-radius: 8px;
+	vertical-align: top;
+	background: white;
+	box-shadow: 0px 0px 7px #c0c0c0;
+}
+.last {
+	margin-right: 1em;
+	margin-left: 1em;
+}
+.failed {
+	color: red;
+	font-weight: bold;
+}
+.passed {
+	color: #00C000;
+	font-weight: bold;
+}
+.running {
+	color: black;
+	font-weight: bold;
+}
+.late {
+	color: blue;
+	font-weight: bold;
+}
+.propgrid {
+	display: grid;
+	grid-template-columns: fit-content(0.5%) fit-content(99.5%);
+	gap: 0.2em;
+}
+.propkey {
+	white-space: nowrap;
+	text-align: right;
+	vertical-align: top;
+	padding-top: 0px;
+	padding-bottom: 0.15em;
+	padding-right: 0.5em;
+}
+.propval {
+	padding: 0px;
+	padding-bottom: 0.15em;
+}
+#loading {
+	padding: 0.5em;
+}
+.lastmod {
+	padding: 0px;
+	padding-left: 0.4em;
+	padding-bottom: 0.4em;
+	font-style: italic;
+}
+.progress_bar {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	width: 100%;
+	font-family: 'Arial';
+	font-size: 8pt;
+}
+.progress_rect {
+	display: inline-block;
+	padding-top: 0.6em;
+	padding-bottom: 0.6em;
+}
+.progress_pass {
+	background: #7BDB7B;	/* light green #00C00080 */
+}
+.progress_fail {
+	background: #FB7B7B;	/* light red #FF000080 */
+}
+.progress_skip {
+	background: #D8D8F0;	/* light blue #0000C020 */
+}
+.progress_nosel {
+	background: #E8E8E8;	/* light gray #00000010 */
+}
+.pager {
+	margin: 1em auto;
+	margin-top: 0px;
+	max-width: 800px;
+	text-align: center;
+	color: #303030;
+}
+.pager_button {
+	border: none;
+	background-color: inherit;
+	cursor: pointer;
+	color: #303030;
+	text-decoration: none;
+	padding: 0.3em;
+	padding-top: 0.1em;
+	padding-bottom: 0.1em;
+	font-size: 150%;
+}
+.pager_button:disabled {
+	color: #a0a0a0;
+	cursor: inherit;
+}
+#pager_form {
+	display: inline;
+}
+#pager_page {
+	font-family: %dashboard_fonts%;
+	background: inherit;
+	border: 1px solid #c0c0c0;
+	text-align: center;
+}
+
+details.propval[open] summary span.ellipse {
+	display: none;
+}
+details.propval summary {
+	display: inline list-item;
+	cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		color: white; /* #e0e0e0; */
+		background: black; /* #202020; */
+	}
+	a {
+		color: #69f;
+	}
+	a:visited {
+		color: #96f;
+	}
+	.balloon {
+		border: 1px solid #404040;
+		background: #141414;
+		box-shadow: 0px 0px 7px #404040;
+	}
+	.running {
+		color: white;
+	}
+	.late {
+		color: #09f;
+	}
+	.progress_nosel {
+		background: #303030; /* dark gray */
+	}
+	.progress_skip {
+		background: #505050;
+	}
+	.pager_button {
+		color: white; /* #a0a0a0; */
+	}
+	.pager_button:disabled {
+		color: #303030;
+	}
+	#pager_page {
+		color: white; /* #a0a0a0; */
+		border: 1px solid #505050;
+	}
+	.pager {
+		color: white; /* #a0a0a0; */
+	}
+}
