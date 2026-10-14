@@ -1,0 +1,34 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Unpack fstests results tarballs
+# Usage: $0 fsmatrix-dir tarball-dir
+
+srcdir="$(readlink -m "$(dirname "$0")")"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -ne 2 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Unpack recently modified test result tarballs in a directory and absorb them into the database."
+	echo "Usage: $0 database_dir tarball_dir"
+	exit 1
+fi
+
+fsmatrix="$1"
+tarballs="$2"
+
+mkdir -p "${fsmatrix}"
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+test -d "${tarballs}" || die "tarball dir not present"
+
+cd "${tarballs}"
+"${srcdir}/find_new_tarballs" "${tarballs}/" | \
+	awk -F '|' '{print $2}' | \
+	xargs -P 2 -n 1 -r -t "${srcdir}/stow_tarball" "${fsmatrix}"
+
+test -n "${DBG}" && symlinks -r -d "${fsmatrix}"
+exit 0

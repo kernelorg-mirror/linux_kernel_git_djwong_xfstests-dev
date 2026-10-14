@@ -1,0 +1,27 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Query database
+# Usage: $0 fsmatrix-dir
+
+srcdir="$(dirname "$0")"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -eq 0 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Open database with sqlite extensions."
+	echo "Usage: $0 database_dir [sqlite_args]"
+	exit 1
+fi
+
+fsmatrix="$1"
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+shift
+
+fsmatrix="$(readlink -m "${fsmatrix}")"
+database="${fsmatrix}/fstests.db"
+exec sqlite3 "$@" "${database}"

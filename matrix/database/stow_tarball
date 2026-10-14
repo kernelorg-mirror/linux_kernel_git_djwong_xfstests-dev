@@ -1,0 +1,169 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Unpack fstests results tarball
+# Usage: $0 fsmatrix-dir tarball
+
+srcdir="$(readlink -m "$(dirname "$0")")"
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+if [ $# -ne 2 ] || [ -z "$1" ] || [ "$1" = "--help" ]; then
+	echo "Unpack a test results tarball and absorb it into the database."
+	echo "Usage: $0 database_dir tarball"
+	exit 1
+fi
+
+fsmatrix="$1"
+tarball="$2"
+
+mkdir -p "${fsmatrix}"
+test -d "${fsmatrix}" || die "no fsmatrix directory"
+test -f "${tarball}" || die "tarball not present"
+
+fsmatrix="$(readlink -m "${fsmatrix}")"
+tarball="$(readlink -m "${tarball}")"
+fingerprints_dir="${fsmatrix}/fingerprints"
+groups_dir="${fsmatrix}/groups"
+machines_dir="${fsmatrix}/machines"
+tmpdir="${fsmatrix}/tmp/incoming.$$"
+
+trap 'rm -r -f "${tmpdir}"' INT TERM QUIT EXIT
+rm -rf "${tmpdir}"
+mkdir -p "${tmpdir}" "${groups_dir}" "${fingerprints_dir}" "${machines_dir}"
+
+cd "${tmpdir}"
+tar xf "${tarball}"
+chmod -R a+r .
+find results/ -type f -size +262144 | while read bigfile; do
+	truncate -s 262144 "${bigfile}"
+done
+
+test -e summary/result.xml || die "result.xml: not found"
+
+mkid() {
+	sha256sum - | awk '{print $1}'
+}
+
+machine_id="$(mkid < machine/fingerprint)"
+machine_dir="${machines_dir}/.${machine_id}"
+machine_hostname="$(tr './' '__' < machine/hostname)"
+test -z "${machine_hostname}" && machine_hostname="unknown"
+
+# Extract the start time of the test run.  We cannot use the timestamp in the
+# xunit report because that reflects when the report file was generated.
+# If the start time is invalid, use 1/1/1980
+testrun_starttime="$(cat summary/check.starttime)"
+date --date=@"${testrun_starttime}" &>/dev/null || testrun_starttime=315532800
+
+# Unpack machine profile and add it to the database
+if [ ! -d "${machine_dir}" ]; then
+	mkdir -p "${machine_dir}"
+	cp -p -R -u -t "${machine_dir}" machine/*
+fi
+
+# Update the machine name symlink so that it points to the most recently
+# processed results.  (Note that most recently processed is /probably/ also the
+# most up to date, but the caller must stow tarballs in the order that they are
+# generated.)  We expect machine configs to change, so the pretty name points
+# to the fugly machine readable name here.
+(cd "${machines_dir}" ; ln -s -f -n ".${machine_id}" "${machine_hostname}")
+
+testrun_start="$(TZ=UTC date --date="@${testrun_starttime}" +'%Y-%m-%d_%H-%M-%S')"
+testrun_name="${machine_hostname}_${testrun_start}"
+testrun_id="$( (echo "${testrun_name}"; cat summary/test-fingerprints) | mkid)"
+testrun_dir="${machine_dir}/${testrun_name}"
+
+# Unpack the test run data and add that to the database
+mkdir -p "${testrun_dir}"
+cp -p -R -u -t "${testrun_dir}" summary/*
+
+# Deduplicate a (read-only) file.  The second parameter should be a directory
+# with a bunch of files whose names are the hash of their contents.  Generate a
+# content hash for the file; if there's a match in the hash directory, symlink
+# the file to the hash-file.  Otherwise leave it alone.
+try_dedupe() {
+	local file="$1"
+	local dedupe_dir="$2"
+
+	test -e "${file}" || return 0
+	test -d "${dedupe_dir}" || return 0
+
+	local file_id="$(mkid < "${file}")"
+	local dedupe_file="${dedupe_dir}/${file_id}"
+
+	if [ -e "${dedupe_file}" ]; then
+		# hashes match but contents do not; leave it alone
+		cmp -s "${dedupe_file}" "${file}" || return 1
+	else
+		# copy the file to the dedupe dir
+		cp -p "${file}" "${dedupe_file}"
+	fi
+
+	# symlink the original file to the hash-file in the dedupe-dir
+	local tgt="$(realpath --relative-to="$(dirname "${file}")" "${dedupe_file}")"
+	ln -s -f "${tgt}" "${file}"
+}
+
+# Try to dedupe the fingerprint and group files
+try_dedupe "${testrun_dir}/test-fingerprints" "${fingerprints_dir}"
+try_dedupe "${testrun_dir}/test-groups" "${groups_dir}"
+
+# Create a fugly machine readable symlink for the test run.  The pretty test
+# run name should be unique (since it encodes hostname and date) so we make
+# the fugly name point to the pretty one.
+(cd "${machine_dir}" ; rm -f ".${testrun_id}" ; ln -s -f -n "${testrun_name}" ".${testrun_id}")
+
+# Unpack the test statistics and add that to the database, if they exist
+if cd stats &>/dev/null; then
+	find . -type f | while read file; do
+		seq="$(echo "${file}" | sed -e 's/^..\([0-9a-zA-Z]*\/[0-9a-zA-Z-]*\).*$/\1/g')"
+		flat_seq="$(echo "${seq}" | tr '/' '_')"
+		test_id="$(grep "${seq}[[:space:]]" "${testrun_dir}/test-fingerprints" | awk '{print $2}')"
+
+		new_file="$(echo "${file}" | sed -e "s|^.\/|${testrun_dir}/stats/|g" -e "s|${seq}|${flat_seq}|g")"
+		mkdir -p "$(dirname "${new_file}")"
+		cp -p -u "${file}" "${new_file}"
+
+		# Create a fugly machine readable symlink since the name used in the
+		# output file reflects the test name at that particular point in time.
+		link_tgt="$(basename "${new_file}")"
+		link="$(echo "${link_tgt}" | sed -e "s|${flat_seq}|.${test_id}|g")"
+		mkdir -p "${testrun_dir}/stats/"
+		(cd "${testrun_dir}/stats/" ; rm -f "${link}" ; ln -s -f -n "${link_tgt}" "${link}")
+	done
+	cd ..
+fi
+
+# Unpack the test results and add that to the database
+cd results
+find . -type f | while read file; do
+	seq="$(echo "${file}" | sed -e 's/^..\([0-9a-zA-Z]*\/[0-9a-zA-Z-]*\).*$/\1/g')"
+	flat_seq="$(echo "${seq}" | tr '/' '_')"
+	test_id="$(grep "${seq}[[:space:]]" "${testrun_dir}/test-fingerprints" | awk '{print $2}')"
+
+	# If this isn't a test result file (e.g. console.txt) then all we need
+	# to do is preserve the file and move on.  No fugly symlinks.
+	if [ -z "${test_id}" ]; then
+		new_file="$(echo "${file}" | sed -e "s|^.\/|${testrun_dir}/|g")"
+		cp -p -u "${file}" "${new_file}"
+		continue
+	fi
+
+	# Otherwise copy the file to the output dir with the slashes flattened
+	# to underscores.
+	new_file="$(echo "${file}" | sed -e "s|^.\/|${testrun_dir}/|g" -e "s|${seq}|${flat_seq}|g")"
+	cp -p -u "${file}" "${new_file}"
+
+	# Create a fugly machine readable symlink since the name used in the
+	# output file reflects the test name at that particular point in time.
+	link_tgt="$(basename "${new_file}")"
+	link="$(echo "${link_tgt}" | sed -e "s|${flat_seq}|.${test_id}|g")"
+	(cd "${testrun_dir}" ; rm -f "${link}" ; ln -s -f -n "${link_tgt}" "${link}")
+done
+
+"${srcdir}/upsert_test_run" "${fsmatrix}" "${tmpdir}/summary/" "${tmpdir}/machine/" "${testrun_dir}/" "${machine_id}" "${testrun_id}"

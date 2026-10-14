@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019-2026 Oracle.
+
+# Query database for test run ids.
+
+import sys
+import argparse
+
+sys.path.append('%pkg_lib_dir%')
+import fstestdb
+
+
+def die(s):
+	print(s)
+	sys.exit(1)
+
+def main():
+	p = argparse.ArgumentParser(
+			description = 'Query database for test run IDs.')
+	p.add_argument('db_dir', type = str,
+			help = 'Directory containing database.')
+	p.add_argument('--name', type = str,
+			help = 'Name of test machine.')
+	p.add_argument('--or', type = bool,
+			help = 'sgasdg')
+	args = p.parse_args()
+
+	db = fstestdb.Database(args.db_dir)
+	q = fstestdb.DatabaseQuery(db)
+
+	if args.name is not None:
+		for r in q.query_test_runs_by_machine_name(args.name,
+				exact = '%' not in args.name):
+			print(r.__dict__)
+
+if __name__ == '__main__':
+	main()
