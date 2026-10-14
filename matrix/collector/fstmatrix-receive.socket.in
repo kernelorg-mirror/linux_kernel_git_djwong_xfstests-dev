@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2018-2026 Oracle
+# Author: Darrick J. Wong <djwong@kernel.org>
+
+[Unit]
+Description=Socket for Receive fstests Results Tarball
+
+[Socket]
+ListenStream=%fstmatrix_home_dir%/tarballs.sock
+Accept=no
+SocketMode=0220
+SocketGroup=www-data
+SocketUser=www-data
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

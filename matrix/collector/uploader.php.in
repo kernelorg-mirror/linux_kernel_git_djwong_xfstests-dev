@@ -1,0 +1,115 @@
+<?php
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2018-2026 Oracle
+ * Author: Darrick J. Wong <djwong@kernel.org>
+ */
+$debug = false;
+
+# Write fstests tarball to service.
+function write_tarball($userdir, $filename, $tarball_fp)
+{
+	$socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
+	if ($socket === false) {
+		echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
+		return 1;
+	}
+	$res = socket_connect($socket, "$userdir/tarballs.sock");
+	if ($res === false) {
+		echo "socket_connect() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
+		socket_close($socket);
+		return 1;
+	}
+
+	# Socket format: filename, a null, and tarball data.  Yes, the
+	# strlen call will see the null.
+	$buffer = "$filename\0";
+	$buflen = strlen($buffer);
+
+	do {
+		$res = socket_write($socket, $buffer, $buflen);
+		if ($res === false) {
+			echo "socket_write() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
+			socket_close($socket);
+			return 1;
+		} else if ($res != $buflen) {
+			echo "short socket write of $res bytes, buflen was $buflen.\n";
+			socket_close($socket);
+			return 1;
+		}
+
+		if (feof($tarball_fp))
+			break;
+
+		$buffer = fread($tarball_fp, 65536);
+		if ($buffer === false) {
+			echo "read() failed.\n";
+			socket_close($socket);
+			return 1;
+		}
+		$buflen = strlen($buffer);
+	} while ($buflen > 0);
+	socket_shutdown($socket, 1);
+
+	$res = socket_read($socket, 65536);
+	if ($res === false) {
+		echo "socket_read() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
+		socket_close($socket);
+		return 1;
+	} else if (strlen($res) > 0) {
+		echo "Service error:\n";
+		echo "$res\n";
+		socket_close($socket);
+		return 1;
+	}
+
+	socket_close($socket);
+	return 0;
+}
+
+function main()
+{
+	if (!array_key_exists('fname', $_REQUEST)) {
+		echo "No file name specified.\n";
+		return 1;
+	}
+	if (!array_key_exists('CONTENT_LENGTH', $_SERVER)) {
+		echo "No data was attached.\n";
+		return 1;
+	}
+	if (!array_key_exists('CONTENT_TYPE', $_SERVER)) {
+		echo "Content type not provided.\n";
+		return 1;
+	}
+	if ($_SERVER['CONTENT_TYPE'] != "application/octet-stream") {
+		echo "Unrecognized content type.\n";
+		return 1;
+	}
+
+	$fname = $_REQUEST['fname'];
+	if ($GLOBALS['debug'])
+		print($fname);
+
+	$userdir = posix_getpwnam('%fstmatrix_user%')['dir'];
+
+	$fp = fopen("php://input", "rb");
+	$errors = write_tarball($userdir, $fname, $fp);
+	fclose($fp);
+
+	return $errors;
+}
+
+ob_start();
+$ret = main();
+if ($ret == 0) {
+	echo "No errors.\n";
+} else {
+	header($_SERVER["SERVER_PROTOCOL"] . ' 503 Service Temporarily Unavailable');
+	echo "Saw $ret errors.\n";
+}
+
+header('Content-Type: text/plain');
+header('Content-Length: ' . ob_get_length());
+ob_flush();
+
+?>
