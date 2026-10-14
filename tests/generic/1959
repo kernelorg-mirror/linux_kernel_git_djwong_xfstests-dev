@@ -1,0 +1,52 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 Oracle.  All Rights Reserved.
+#
+# FS QA Test No. 1959
+#
+# Regression test for a reflink bug where a program can map and pin a large
+# folio overlapping the edge of a reflink range, and then the page owner can
+# redirty the page without the filesystem getting notified.  This enables
+# attackers to rewrite a shared block.
+. ./common/preamble
+_begin_fstest auto quick clone
+
+. ./common/filter
+. ./common/reflink
+
+_require_test_program "xfs-clamupfs"
+_require_user fsgqa
+_require_group fsgqa
+_require_scratch_reflink
+_require_cp_reflink
+
+_fixed_by_fs_commit xfs XXXXXXXXXXXXXX \
+	"xfs: keep FICLONERANGE from overwriting the source"
+
+_scratch_mkfs >> $seqres.full
+_scratch_mount
+
+victim=$SCRATCH_MNT/srcfile
+userdir=$SCRATCH_MNT/user1
+blksz=$(_get_file_block_size $SCRATCH_MNT)
+
+mkdir -p $userdir
+$XFS_IO_PROG -f -c "pwrite -S 0x59 0 $blksz" $victim >> $seqres.full
+$XFS_IO_PROG -f -c "pwrite -S 0x59 0 $blksz" $victim.copy >> $seqres.full
+sync
+
+chown $qa_user:$qa_group $userdir
+chmod +r $victim
+
+_su $qa_user -c "./src/xfs-clamupfs $userdir $victim $((200 * TIME_FACTOR))" &> $tmp.out
+
+echo "Errors from reproducer:" >> $seqres.full
+cat $tmp.out >> $seqres.full
+grep -v unchanged $tmp.out
+
+_scratch_cycle_mount
+
+cmp -s $victim $victim.copy || \
+	echo "File data corrupted, kaboom!"
+
+_exit 0
